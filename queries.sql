@@ -93,3 +93,30 @@ JOIN RESERVATIONS r ON t.ticket_id = r.ticket_id
 WHERE pr.name = 'تهران' AND r.status = 'paid'
 GROUP BY c.city_id, c.name;
 
+-- 10. cities that oldest user had buyed ticket from that
+SELECT DISTINCT c.name AS city_name
+FROM CITIES c
+JOIN VENUES v ON c.city_id = v.city_id
+JOIN MATCHES m ON v.venue_id = m.venue_id
+JOIN TICKETS t ON m.match_id = t.match_id
+JOIN RESERVATIONS r ON t.ticket_id = r.ticket_id
+WHERE r.status = 'paid' AND r.user_id = (
+    SELECT user_id 
+    FROM USERS 
+    ORDER BY created_at ASC 
+    LIMIT 1
+);
+
+-- 11. information of supports
+SELECT DISTINCT c.name AS city_name
+FROM CITIES c
+JOIN VENUES v ON c.city_id = v.city_id
+JOIN MATCHES m ON v.venue_id = m.venue_id
+JOIN TICKETS t ON m.match_id = t.match_id
+JOIN RESERVATIONS r ON t.ticket_id = r.ticket_id
+WHERE r.status = 'paid' AND r.user_id = (
+    SELECT user_id 
+    FROM USERS 
+    ORDER BY created_at ASC 
+    LIMIT 1
+);
