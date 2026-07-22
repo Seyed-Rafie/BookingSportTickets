@@ -63,3 +63,33 @@ HAVING SUM(p.amount) > (
         GROUP BY r2.user_id
     ) AS subquery
 );
+
+-- 7. number of sold tickets by a type of sport
+SELECT st.name AS sport_name, COALESCE(SUM(r.quantity), 0) AS tickets_sold
+FROM SPORT_TYPES st
+LEFT JOIN MATCHES m ON st.sport_type_id = m.sport_type_id
+LEFT JOIN TICKETS t ON m.match_id = t.match_id
+LEFT JOIN RESERVATIONS r ON t.ticket_id = r.ticket_id AND r.status = 'paid'
+GROUP BY st.sport_type_id, st.name;
+
+-- 8. name of 3 users who had most buyed ticket in a week
+SELECT u.first_name, u.last_name, SUM(r.quantity) AS total_tickets_bought
+FROM USERS u
+JOIN RESERVATIONS r ON u.user_id = r.user_id
+JOIN PAYMENTS p ON r.reservation_id = p.reservation_id
+WHERE p.status = 'success' AND p.paid_at >= NOW() - INTERVAL '7 days'
+GROUP BY u.user_id, u.first_name, u.last_name
+ORDER BY total_tickets_bought DESC
+LIMIT 3;
+
+-- 9. numbers of sold tickets in Tehran province
+SELECT c.name AS city_name, SUM(r.quantity) AS tickets_sold
+FROM PROVINCES pr
+JOIN CITIES c ON pr.province_id = c.province_id
+JOIN VENUES v ON c.city_id = v.city_id
+JOIN MATCHES m ON v.venue_id = m.venue_id
+JOIN TICKETS t ON m.match_id = t.match_id
+JOIN RESERVATIONS r ON t.ticket_id = r.ticket_id
+WHERE pr.name = 'تهران' AND r.status = 'paid'
+GROUP BY c.city_id, c.name;
+
