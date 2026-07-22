@@ -69,3 +69,78 @@ $$ LANGUAGE plpgsql;
 
 -- example:
 -- SELECT * FROM sp_get_users_with_cancellations('support@system.com');
+
+-- 3.
+CREATE OR REPLACE FUNCTION sp_get_purchased_tickets_by_city(p_city_name VARCHAR)
+RETURNS TABLE (
+    ticket_code VARCHAR,
+    venue_name VARCHAR,
+    home_team VARCHAR,
+    away_team VARCHAR,
+    buyer_first_name VARCHAR,
+    buyer_last_name VARCHAR,
+    total_paid NUMERIC(15, 2)
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        t.ticket_code,
+        v.name AS venue_name,
+        th.name AS home_team,
+        ta.name AS away_team,
+        u.first_name AS buyer_first_name,
+        u.last_name AS buyer_last_name,
+        r.total_price AS total_paid
+    FROM CITIES c
+    JOIN VENUES v ON c.city_id = v.city_id
+    JOIN MATCHES m ON v.venue_id = m.venue_id
+    JOIN TICKETS t ON m.match_id = t.match_id
+    JOIN RESERVATIONS r ON t.ticket_id = r.ticket_id
+    JOIN USERS u ON r.user_id = u.user_id
+    WHERE c.name = p_city_name 
+      AND r.status = 'paid';
+END;
+$$ LANGUAGE plpgsql;
+
+-- example:
+-- SELECT * FROM sp_get_purchased_tickets_by_city('تهران');
+
+--4.
+CREATE OR REPLACE FUNCTION sp_search_tickets(p_search_term VARCHAR)
+RETURNS TABLE (
+    ticket_code VARCHAR,
+    buyer_full_name VARCHAR,
+    match_teams VARCHAR,
+    venue_name VARCHAR,
+    ticket_category VARCHAR,
+    reservation_status VARCHAR
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        t.ticket_code,
+        (u.first_name || ' ' || u.last_name)::VARCHAR AS buyer_full_name,
+        (th.name || ' vs ' || ta.name)::VARCHAR AS match_teams,
+        v.name AS venue_name,
+        tc.name AS ticket_category,
+        r.status AS reservation_status
+    FROM TICKETS t
+    JOIN RESERVATIONS r ON t.ticket_id = r.ticket_id
+    JOIN USERS u ON r.user_id = u.user_id
+    JOIN MATCHES m ON t.match_id = m.match_id
+    JOIN TEAMS th ON m.home_team_id = th.team_id
+    JOIN TEAMS ta ON m.away_team_id = ta.team_id
+    JOIN VENUES v ON m.venue_id = v.venue_id
+    JOIN TICKET_CATEGORIES tc ON t.category_id = tc.category_id
+    WHERE 
+        (u.first_name ILIKE '%' || p_search_term || '%')
+        OR (u.last_name ILIKE '%' || p_search_term || '%')
+        OR (th.name ILIKE '%' || p_search_term || '%')
+        OR (ta.name ILIKE '%' || p_search_term || '%')
+        OR (v.name ILIKE '%' || p_search_term || '%')
+        OR (tc.name ILIKE '%' || p_search_term || '%');
+END;
+$$ LANGUAGE plpgsql;
+
+-- example:
+-- SELECT * FROM sp_search_tickets('پرسپولیس');
