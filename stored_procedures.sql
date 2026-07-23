@@ -94,6 +94,8 @@ BEGIN
     FROM CITIES c
     JOIN VENUES v ON c.city_id = v.city_id
     JOIN MATCHES m ON v.venue_id = m.venue_id
+    JOIN TEAMS th ON m.home_team_id = th.team_id
+    JOIN TEAMS ta ON m.away_team_id = ta.team_id
     JOIN TICKETS t ON m.match_id = t.match_id
     JOIN RESERVATIONS r ON t.ticket_id = r.ticket_id
     JOIN USERS u ON r.user_id = u.user_id
@@ -103,7 +105,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- example:
--- SELECT * FROM sp_get_purchased_tickets_by_city('تهران');
+-- SELECT * FROM sp_get_purchased_tickets_by_city('tehran');
 
 --4.
 CREATE OR REPLACE FUNCTION sp_search_tickets(p_search_term VARCHAR)
@@ -143,4 +145,4 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- example:
--- SELECT * FROM sp_search_tickets('پرسپولیس');
+-- SELECT * FROM sp_search_tickets('perspolis');
