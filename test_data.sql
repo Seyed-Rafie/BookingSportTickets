@@ -134,3 +134,10 @@ INSERT INTO REFUNDS (refund_id, payment_id, cancellation_request_id, wallet_tran
 (1, 1, 1, 3, 900000.00, 'success', NOW() - INTERVAL '12 hours');
 
 UPDATE WALLETS SET balance = balance + 900000.00 WHERE user_id = 1;
+
+----
+UPDATE RESERVATIONS SET status = 'cancelled' WHERE reservation_id = 1;
+
+UPDATE REPORTS SET reviewed_by_support_id = 3 WHERE report_id = 1;
+
+UPDATE PAYMENTS SET paid_at = CURRENT_TIMESTAMP WHERE payment_id = 2;
