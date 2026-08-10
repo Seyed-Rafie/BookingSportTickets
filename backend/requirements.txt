@@ -1,0 +1,19 @@
+# main framwork
+fastapi==0.110.0
+uvicorn[standard]==0.28.0
+
+# coonect to postgresql server
+psycopg2-binary==2.9.9
+
+# redis
+redis==5.0.3
+
+# manage .env (envirement variables)
+python-dotenv==1.0.1
+pydantic==2.6.4
+pydantic-settings==2.2.1
+
+# JWT
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.9
