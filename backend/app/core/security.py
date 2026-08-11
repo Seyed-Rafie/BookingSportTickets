@@ -13,7 +13,7 @@ def create_access_token(data: dict) -> str:
     # Generate signed JWT token string
     encoded_jwt = jwt.encode(
         to_encode, 
-        settings.JWT_SECRET_KEY, 
-        algorithm=settings.JWT_ALGORITHM
+        settings.SECRET_KEY, 
+        algorithm=settings.ALGORITHM
     )
     return encoded_jwt
