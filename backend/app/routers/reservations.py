@@ -32,3 +32,23 @@ def create_reservation(data: ReservationCreate):
     execute_query("UPDATE tickets SET status = 'RESERVED' WHERE id = %s", (data.ticket_id,))
     
     return {"message": "رزرو موقت ایجاد شد. ۱۰ دقیقه فرصت پرداخت دارید.", "reservation": new_res[0]}
+
+class PaymentCreate(BaseModel):
+    reservation_id: int
+    payment_method: str  # مثلا 'CARD' یا 'WALLET'
+
+@router.post("/pay")
+def process_payment(data: PaymentCreate):
+    # ۱. پیدا کردن رزرو
+    res = execute_query("SELECT * FROM reservations WHERE id = %s AND status = 'PENDING'", (data.reservation_id,))
+    if not res:
+        raise HTTPException(status_code=404, detail="رزرو معتبری یافت نشد یا زمان آن به پایان رسیده است.")
+
+    # ۲. ثبت موفقیت‌آمیز پرداخت
+    execute_query("INSERT INTO payments (reservation_id, method, status) VALUES (%s, %s, 'SUCCESS')", (data.reservation_id, data.payment_method))
+    
+    # ۳. آپدیت وضعیت رزرو و بلیط به PAID و SOLD
+    execute_query("UPDATE reservations SET status = 'CONFIRMED' WHERE id = %s", (data.reservation_id,))
+    execute_query("UPDATE tickets SET status = 'SOLD' WHERE id = %s", (res[0]['ticket_id'],))
+
+    return {"status": "SUCCESS", "message": "پرداخت با موفقیت انجام شد و بلیط صادر گردید."}
