@@ -6,3 +6,29 @@ import datetime
 from app.db.database import execute_query 
 
 router = APIRouter(prefix="/reservations", tags=["Reservations & Payments"])
+
+class ReservationCreate(BaseModel):
+    user_id: int
+    ticket_id: int
+
+@router.post("")
+def create_reservation(data: ReservationCreate):
+    # ۱. بررسی موجود بودن بلیط
+    ticket = execute_query("SELECT * FROM tickets WHERE id = %s AND status = 'AVAILABLE'", (data.ticket_id,))
+    if not ticket:
+        raise HTTPException(status_code=400, detail="بلیط موجود نیست یا قبلاً خریده شده است.")
+
+    # ۲. ثبت رزرو با ۱۰ دقیقه مهلت پرداخت
+    expires_at = datetime.datetime.now() + datetime.timedelta(minutes=10)
+    
+    insert_query = """
+        INSERT INTO reservations (user_id, ticket_id, status, expires_at)
+        VALUES (%s, %s, 'PENDING', %s)
+        RETURNING id, status, expires_at;
+    """
+    new_res = execute_query(insert_query, (data.user_id, data.ticket_id, expires_at))
+    
+    # ۳. تغییر وضعیت بلیط به حالت رزرو شده
+    execute_query("UPDATE tickets SET status = 'RESERVED' WHERE id = %s", (data.ticket_id,))
+    
+    return {"message": "رزرو موقت ایجاد شد. ۱۰ دقیقه فرصت پرداخت دارید.", "reservation": new_res[0]}
