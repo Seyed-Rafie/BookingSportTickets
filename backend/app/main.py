@@ -1,12 +1,15 @@
 from fastapi import FastAPI, HTTPException, status
 from app.core.database import check_db_health
 from app.core.redis_client import check_redis_health
+from app.routers.auth import router as auth_router
 
 app = FastAPI(
     title="Sports Ticketing System API",
     description="booking sport ticket platform",
     version="1.0.0"
 )
+
+app.include_router(auth_router)
 
 @app.get("/", tags=["Root"])
 def read_root():
