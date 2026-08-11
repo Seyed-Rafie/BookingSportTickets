@@ -8,10 +8,10 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = "default_secret_key_for_dev_only"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # معادل ۲۴ ساعت
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # 24H
 
     # read .env variables
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-# ساخت یک نمونه یکتا از تنظیمات
+# build an unique instance
 settings = Settings()
