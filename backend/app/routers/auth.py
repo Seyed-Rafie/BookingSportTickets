@@ -74,13 +74,13 @@ def verify_otp(request: VerifyOTPRequest):
 
     # Raw SQL Query to check existing user in PostgreSQL (NO ORM used)
     sql_query = """
-        SELECT id, name, email, phone, role, is_active 
+        SELECT user_id, first_name, last_name, email, phone, role_id, status 
         FROM users 
         WHERE email = %s OR phone = %s
         LIMIT 1;
     """
 
-    user_row = execute_query(sql_query,(identifier, identifier), True)
+    user_row = execute_query(sql_query,params=(identifier, identifier), fetch_one=True)
 
     # If user record does not exist in DB, signal that registration is required
     if not user_row:
@@ -92,7 +92,7 @@ def verify_otp(request: VerifyOTPRequest):
         )
 
     # Verify if user account is enabled
-    if not user_row.get("is_active", True):
+    if user_row.get("status", "active") == "deactive":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is deactivated."
@@ -100,8 +100,8 @@ def verify_otp(request: VerifyOTPRequest):
 
     # Issue JWT token for existing user
     token_payload = {
-        "sub": str(user_row["id"]),
-        "role": user_row["role"]
+        "sub": str(user_row["user_id"]),
+        "role": user_row["role_id"]
     }
     access_token = create_access_token(token_payload)
 
@@ -111,11 +111,12 @@ def verify_otp(request: VerifyOTPRequest):
         access_token=access_token,
         token_type="bearer",
         user=UserData(
-            id=user_row["id"],
-            name=user_row.get("name"),
+            id=user_row["user_id"],
+            first_name=user_row.get("first_name"),
+            last_name=user_row.get("last_name"),
             email=user_row.get("email"),
             phone=user_row.get("phone"),
-            role=user_row["role"],
-            is_active=user_row["is_active"]
+            role=user_row["role_id"],
+            status=user_row["status"]
         )
     )

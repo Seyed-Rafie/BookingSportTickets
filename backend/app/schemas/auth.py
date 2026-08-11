@@ -15,11 +15,12 @@ class SendOTPResponse(BaseModel):
 
 class UserData(BaseModel):
     id: int
-    name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     role: str
-    is_active: bool
+    status: str
 
 class VerifyOTPResponse(BaseModel):
     message: str

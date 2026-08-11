@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # 24H
 
+    #OTP
+    OTP_EXPIRE_SECONDS: int = 120 # 2m
+    OTP_LENGTH: int = 6
+
     # read .env variables
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
