@@ -52,3 +52,15 @@ def process_payment(data: PaymentCreate):
     execute_query("UPDATE tickets SET status = 'SOLD' WHERE id = %s", (res[0]['ticket_id'],))
 
     return {"status": "SUCCESS", "message": "پرداخت با موفقیت انجام شد و بلیط صادر گردید."}
+
+@router.get("/user/{user_id}")
+def get_user_reservations(user_id: int):
+    query = """
+        SELECT r.id as reservation_id, r.status, r.created_at, t.title, t.price, t.event_date
+        FROM reservations r
+        JOIN tickets t ON r.ticket_id = t.id
+        WHERE r.user_id = %s
+        ORDER BY r.created_at DESC;
+    """
+    history = execute_query(query, (user_id,))
+    return {"user_id": user_id, "history": history}
