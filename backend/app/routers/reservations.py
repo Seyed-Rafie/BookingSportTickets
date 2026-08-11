@@ -64,3 +64,8 @@ def get_user_reservations(user_id: int):
     """
     history = execute_query(query, (user_id,))
     return {"user_id": user_id, "history": history}
+
+from app.routers import reservations  # این خط را بالا اضافه کن
+
+# این خط را هم در انتهای فایل اضافه کن:
+app.include_router(reservations.router)
