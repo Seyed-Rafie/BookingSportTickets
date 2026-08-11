@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 # فرض بر این است که تابع execute_query در فایل app/db/database.py قرار دارد
 # اگر اسم فایل یا پوشه شما فرق دارد، این لاین را متناسب با آن تغییر دهید
-from app.db.database import execute_query 
+from app.core.database import execute_query
 
 router = APIRouter(prefix="/reservations", tags=["Reservations & Payments"])
 
