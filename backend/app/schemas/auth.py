@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 
 class SendOTPRequest(BaseModel):
@@ -19,7 +19,7 @@ class UserData(BaseModel):
     last_name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
-    role: str
+    role_id: int
     status: str
 
 class VerifyOTPResponse(BaseModel):
@@ -28,3 +28,17 @@ class VerifyOTPResponse(BaseModel):
     access_token: Optional[str] = None
     token_type: Optional[str] = "bearer"
     user: Optional[UserData] = None
+
+class SignupRequest(BaseModel):
+    first_name: str = Field(..., min_length=2, example="Ali")
+    last_name: str = Field(..., min_length=2, example="Rezaei")
+    email: Optional[EmailStr] = Field(None, example="ali@example.com")
+    phone: Optional[str] = Field(None, example="09121112233")
+    password: str = Field(..., min_length=6, example="SecretPassword123")
+    role_id: int = Field("1", example="1")  # Default role is User; 1:User, 
+
+class SignupResponse(BaseModel):
+    message: str
+    access_token: str
+    token_type: str = "bearer"
+    user: UserData
