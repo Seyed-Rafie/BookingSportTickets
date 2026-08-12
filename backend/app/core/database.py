@@ -4,10 +4,7 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 from app.core.config import settings
 
-<<<<<<< HEAD
-=======
 # ساخت استخر اتصالات
->>>>>>> 1afbb1bc8ca6eb896abe4a199cff65e3cc72d755
 try:
     db_pool = ThreadedConnectionPool(
         minconn=1,
