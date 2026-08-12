@@ -4,6 +4,10 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 from app.core.config import settings
 
+<<<<<<< HEAD
+=======
+# ساخت استخر اتصالات
+>>>>>>> 1afbb1bc8ca6eb896abe4a199cff65e3cc72d755
 try:
     db_pool = ThreadedConnectionPool(
         minconn=1,
@@ -24,10 +28,20 @@ def get_db_connection():
     
     conn = db_pool.getconn()
     try:
+        # بررسی زنده بودن کانکشن (بررسی قطعی SSL یا Idle)
+        if conn.closed != 0:
+            conn = db_pool.getconn()
+        yield conn
+    except psycopg2.OperationalError:
+        # اگر کانکشن وسط کار قطع شد، آن را لغو و مجدداً متصل شوید
+        db_pool.putconn(conn, close=True)
+        conn = psycopg2.connect(settings.DATABASE_URL)
         yield conn
     finally:
-        # drop connection
-        db_pool.putconn(conn)
+        try:
+            db_pool.putconn(conn)
+        except Exception:
+            conn.close()
 
 
 def execute_query(query: str, params: tuple = None, fetch_one: bool = False, fetch_all: bool = False, commit: bool = False):
@@ -35,24 +49,42 @@ def execute_query(query: str, params: tuple = None, fetch_one: bool = False, fet
     function for run and return outputs of sql query
     outputs return in dict form
     """
-    with get_db_connection() as conn:
-        # RealDictCursor is for returning output in dict form
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(query, params or ())
-            
-            result = None
-            if fetch_one:
-                row = cursor.fetchone()
-                result = dict(row) if row else None
-            elif fetch_all:
-                rows = cursor.fetchall()
-                result = [dict(row) for row in rows] if rows else []
-
-            # commit is necessary for insert, update, delete
-            if commit:
-                conn.commit()
+    try:
+        with get_db_connection() as conn:
+            # اتوکمیت برای عدم قفل شدن تراکنش‌ها
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute(query, params or ())
                 
-            return result
+                result = None
+                if fetch_one:
+                    row = cursor.fetchone()
+                    result = dict(row) if row else None
+                elif fetch_all:
+                    rows = cursor.fetchall()
+                    result = [dict(row) for row in rows] if rows else []
+
+                if commit:
+                    conn.commit()
+                    
+                return result
+    except Exception as e:
+        # اگر قطعی رخ داد، یک بار دیگر مستقیماً با اتصال جدید تلاش کن
+        if "SSL" in str(e) or "connection" in str(e).lower():
+            conn = psycopg2.connect(settings.DATABASE_URL)
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute(query, params or ())
+                result = None
+                if fetch_one:
+                    row = cursor.fetchone()
+                    result = dict(row) if row else None
+                elif fetch_all:
+                    rows = cursor.fetchall()
+                    result = [dict(row) for row in rows] if rows else []
+                if commit:
+                    conn.commit()
+                conn.close()
+                return result
+        raise e
 
 
 def check_db_health() -> bool:

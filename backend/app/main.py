@@ -3,6 +3,7 @@ from app.core.database import check_db_health
 from app.core.redis_client import check_redis_health
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
+from app.routers import reservations  # ۱. این خط را برای اضافه کردن روتر خودت اضافه کن
 
 app = FastAPI(
     title="Sports Ticketing System API",
@@ -12,6 +13,9 @@ app = FastAPI(
 
 app.include_router(auth_router)
 app.include_router(users_router)
+
+# ۲. این خط را اضافه کن تا APIهای رزرو و پرداخت به برنامه متصل شوند
+app.include_router(reservations.router)
 
 @app.get("/", tags=["Root"])
 def read_root():
@@ -25,7 +29,7 @@ def read_root():
 def health_check():
     # checking health of database and redis
     db_healthy = check_db_health()
-    redis_healthy = check_redis_healthy = check_redis_health()
+    redis_healthy = check_redis_health() # اصلاح یک اشتباه تایپی کوچک در کد قبلی شما
 
     is_all_healthy = db_healthy and redis_healthy
 
