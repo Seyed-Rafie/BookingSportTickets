@@ -112,7 +112,7 @@ def verify_otp(request: VerifyOTPRequest):
         access_token=access_token,
         token_type="bearer",
         user=UserData(
-            id=user_row["user_id"],
+            user_id=user_row["user_id"],
             first_name=user_row.get("first_name"),
             last_name=user_row.get("last_name"),
             email=user_row.get("email"),
@@ -182,7 +182,7 @@ def signup(request: SignupRequest):
         access_token=access_token,
         token_type="bearer",
         user=UserData(
-            id=new_user["user_id"],
+            user_id=new_user["user_id"],
             first_name=new_user["first_name"],
             last_name=new_user["last_name"],
             email=new_user["email"],

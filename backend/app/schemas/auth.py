@@ -14,7 +14,7 @@ class SendOTPResponse(BaseModel):
     expires_in: int
 
 class UserData(BaseModel):
-    id: int
+    user_id: int
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[str] = None
@@ -35,7 +35,7 @@ class SignupRequest(BaseModel):
     email: Optional[EmailStr] = Field(None, example="ali@example.com")
     phone: Optional[str] = Field(None, example="09121112233")
     password: str = Field(..., min_length=6, example="SecretPassword123")
-    role_id: int = Field("1", example="1")  # Default role is User; 1:User, 
+    role_id: int = Field("2", example="1")  # Default role is User; 1:Admin, 2:Customer, 3:Support
 
 class SignupResponse(BaseModel):
     message: str
