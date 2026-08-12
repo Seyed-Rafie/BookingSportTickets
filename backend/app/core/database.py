@@ -4,9 +4,6 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 from app.core.config import settings
 
-# ساخت استخر اتصالات (Connection Pool) برای دیتابیس Neon
-# minconn=1: حداقل ۱ اتصال همیشه باز است
-# maxconn=10: حداکثر ۱۰ اتصال هم‌زمان برای پاسخ‌دهی ایجاد می‌شود
 try:
     db_pool = ThreadedConnectionPool(
         minconn=1,
