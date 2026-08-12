@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.auth import (
     SendOTPRequest, SendOTPResponse,
-    VerifyOTPRequest, VerifyOTPResponse, UserData
+    VerifyOTPRequest, VerifyOTPResponse, UserData,
+    SignupRequest, SignupResponse
 )
 from app.core.redis_client import redis_client
 from app.core.config import settings
 from app.core.database import execute_query
-from app.core.security import create_access_token
+from app.core.security import create_access_token, hash_password, create_access_token
 from app.utils.otp import generate_otp_code, send_otp_notification
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -116,7 +117,77 @@ def verify_otp(request: VerifyOTPRequest):
             last_name=user_row.get("last_name"),
             email=user_row.get("email"),
             phone=user_row.get("phone"),
-            role=user_row["role_id"],
+            role_id=user_row["role_id"],
             status=user_row["status"]
+        )
+    )
+
+@router.post("/signup", response_model=SignupResponse, status_code=status.HTTP_201_CREATED)
+def signup(request: SignupRequest):
+    """
+    Complete user registration by hashing password and inserting into PostgreSQL.
+    """
+    # Ensure at least one identifier is provided
+    if not request.email and not request.phone:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either email or phone number must be provided."
+        )
+
+    # 1. Check if user already exists in PostgreSQL
+    check_query = """
+        SELECT user_id FROM users 
+        WHERE (email IS NOT NULL AND email = %s) 
+           OR (phone IS NOT NULL AND phone = %s)
+        LIMIT 1;
+    """
+    # Using execute_query helper
+    existing_user = execute_query(check_query, (request.email, request.phone), fetch_one=True)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email or phone already exists."
+        )
+
+    # 2. Hash the user password securely
+    hashed_pwd = hash_password(request.password)
+
+    # 3. Insert new user into DB using raw SQL
+    insert_query = """
+        INSERT INTO users (first_name, last_name, email, phone, password_hash, role_id, status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        RETURNING user_id, first_name, last_name, email, phone, role_id, status;
+    """
+    params = (
+        request.first_name,
+        request.last_name,
+        request.email,
+        request.phone,
+        hashed_pwd,
+        request.role_id,
+        "active"
+    )
+    
+    new_user = execute_query(insert_query, params=params, fetch_one=True, commit=True)
+
+    # 4. Issue access JWT token for the newly registered user
+    token_payload = {
+        "sub": str( new_user["user_id"]),
+        "role": new_user["role_id"]
+    }
+    access_token = create_access_token(token_payload)
+
+    return SignupResponse(
+        message="User registered successfully.",
+        access_token=access_token,
+        token_type="bearer",
+        user=UserData(
+            id=new_user["user_id"],
+            first_name=new_user["first_name"],
+            last_name=new_user["last_name"],
+            email=new_user["email"],
+            phone=new_user["phone"],
+            role_id=new_user["role_id"],
+            status=new_user["status"]
         )
     )
