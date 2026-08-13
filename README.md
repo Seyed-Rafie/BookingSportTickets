@@ -18,6 +18,8 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 #or
 uvicorn app.main:app --reload --port 8001
+#اگر از این استفاده کردید برای رفتن تو صفحه وب از این استفاده کنید
+http://localhost:8001/docs#
 ```
 
 ## 🎟️ سیستم رزرو و پرداخت (Reservations & Payments)
