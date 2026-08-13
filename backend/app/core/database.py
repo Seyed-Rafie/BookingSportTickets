@@ -3,8 +3,7 @@ from contextlib import contextmanager
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import ThreadedConnectionPool
-from config import settings
-
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 

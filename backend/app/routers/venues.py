@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Query, HTTPException, status
 
 from app.schemas.venue import VenueResponseSchema
-from app.core.database import execute_sql
+from app.core.database import execute_query
 from app.core.redis_client import get_cache, set_cache
 
 router = APIRouter(prefix="/venues", tags=["Venues & Cities"])
@@ -65,7 +65,7 @@ def get_venues(
 
     # ۵. اجرای کوئری خام روی PostgreSQL
     try:
-        db_rows = execute_raw_sql(base_sql, tuple(params))
+        db_rows = execute_query(base_sql, tuple(params))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
