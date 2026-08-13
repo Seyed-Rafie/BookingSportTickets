@@ -9,11 +9,10 @@ from app.core.dependencies import get_current_user
 from app.schemas.reservation import (
     ReservationCreate,
     ReservationResponse,
-    TicketSummary,
     PaymentCreate,
     PaymentResponse,
     UserReservationHistory,
-    ReservationItemDetail,
+    ReservationSeatDetail,
 )
 
 router = APIRouter(prefix="/reservations", tags=["Reservations & Payments"])
@@ -28,90 +27,90 @@ def create_reservation(
     current_user: dict = Depends(get_current_user)
 ):
     user_id = current_user["user_id"]
-    ticket_ids = payload.ticket_ids
+    ticket_id = payload.ticket_id
+    seat_ids = payload.seat_ids
+    quantity = len(seat_ids)
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
-        # ۱. بررسی وجود و آماده‌به‌فروش بودن تمامی بلیط‌های درخواستی
+        # ۱. بررسی وجود و قیمت بلیط
         cursor.execute(
-            """
-            SELECT ticket_id, price, status 
-            FROM tickets 
-            WHERE ticket_id = ANY(%s)
-            FOR UPDATE;
-            """,
-            (ticket_ids,)
+            "SELECT price, remaining_capacity, status FROM TICKETS WHERE ticket_id = %s FOR UPDATE;",
+            (ticket_id,)
         )
-        fetched_tickets = cursor.fetchall()
+        ticket = cursor.fetchone()
 
-        if len(fetched_tickets) != len(set(ticket_ids)):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="یک یا چند بلیط درخواستی یافت نشدند."
-            )
+        if not ticket:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="بلیط مورد نظر یافت نشد.")
 
-        total_amount = Decimal("0.00")
-        tickets_summary: List[TicketSummary] = []
+        if ticket["remaining_capacity"] < quantity:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ظرفیت بلیط کافی نیست.")
 
-        for ticket in fetched_tickets:
-            t_id, price, status_val = ticket["ticket_id"], ticket["price"], ticket["status"]
-            if status_val != "AVAILABLE":
+        # ۲. بررسی آماده رزرو بودن صندلی‌های انتخابی
+        cursor.execute(
+            "SELECT seat_id, status FROM SEATS WHERE seat_id = ANY(%s) AND ticket_id = %s FOR UPDATE;",
+            (seat_ids, ticket_id)
+        )
+        seats = cursor.fetchall()
+
+        if len(seats) != quantity:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="یک یا چند صندلی انتخابی معتبر نیستند.")
+
+        for s in seats:
+            if s["status"] != "available":
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"بلیط با شناسه {t_id} در حال حاضر قابل رزرو نیست."
+                    detail=f"صندلی با شناسه {s['seat_id']} قبلاً رزرو یا فروخته شده است."
                 )
-            total_amount += Decimal(str(price))
-            tickets_summary.append(TicketSummary(ticket_id=t_id, price=price))
 
-        # ۲. محاسبه مهلت انقضا (۱۰ دقیقه آینده)
-        expires_at = datetime.now() + timedelta(minutes=10)
+        # ۳. محاسبه مبلغ کل و مهلت ۱۰ دقیقه‌ای
+        total_price = Decimal(str(ticket["price"])) * quantity
+        reserved_at = datetime.now()
+        reserved_until = reserved_at + timedelta(minutes=10)
 
-        # ۳. ثبت رکورد اصلی در جدول reservations
+        # ۴. ایجاد رکورد اصلی در جدول RESERVATIONS
         cursor.execute(
             """
-            INSERT INTO reservations (user_id, total_amount, status, expires_at)
-            VALUES (%s, %s, 'PENDING', %s)
-            RETURNING reservation_id, created_at;
+            INSERT INTO RESERVATIONS (user_id, ticket_id, quantity, status, total_price, reserved_at, reserved_until)
+            VALUES (%s, %s, %s, 'reserved', %s, %s, %s)
+            RETURNING reservation_id;
             """,
-            (user_id, total_amount, expires_at)
+            (user_id, ticket_id, quantity, total_price, reserved_at, reserved_until)
         )
         res_row = cursor.fetchone()
         reservation_id = res_row["reservation_id"]
-        created_at = res_row["created_at"]
 
-        # ۴. ثبت رکوردهای آیتم رزرو در reservation_items
-        for t_summary in tickets_summary:
+        # ۵. قفل صندلی‌ها در RESERVED_SEATS و آپدیت وضعیت صندلی‌ها به 'reserved'
+        for s_id in seat_ids:
             cursor.execute(
-                """
-                INSERT INTO reservation_items (reservation_id, ticket_id, price)
-                VALUES (%s, %s, %s);
-                """,
-                (reservation_id, t_summary.ticket_id, t_summary.price)
+                "INSERT INTO RESERVED_SEATS (reservation_id, seat_id, status) VALUES (%s, %s, 'active');",
+                (reservation_id, s_id)
+            )
+            cursor.execute(
+                "UPDATE SEATS SET status = 'reserved' WHERE seat_id = %s;",
+                (s_id,)
             )
 
-        # ۵. به‌روزرسانی وضعیت بلیط‌ها به HELD
+        # ۶. کاهش ظرفیت باقی‌مانده بلیط
         cursor.execute(
-            """
-            UPDATE tickets
-            SET status = 'HELD'
-            WHERE ticket_id = ANY(%s);
-            """,
-            (ticket_ids,)
+            "UPDATE TICKETS SET remaining_capacity = remaining_capacity - %s WHERE ticket_id = %s;",
+            (quantity, ticket_id)
         )
 
-        # ۵. تایید نهایی تراکنش دیتابیس (Commit)
         conn.commit()
 
         return ReservationResponse(
             reservation_id=reservation_id,
             user_id=user_id,
-            total_amount=total_amount,
-            status="PENDING",
-            expires_at=expires_at,
-            created_at=created_at,
-            tickets=tickets_summary
+            ticket_id=ticket_id,
+            quantity=quantity,
+            status="reserved",
+            total_price=total_price,
+            reserved_at=reserved_at,
+            reserved_until=reserved_until,
+            seat_ids=seat_ids
         )
 
     except HTTPException:
@@ -121,7 +120,7 @@ def create_reservation(
         conn.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"خطای سرور هنگام ثبت رزرو: {str(e)}"
+            detail=f"خطا در ایجاد رزرو: {str(e)}"
         )
     finally:
         cursor.close()
@@ -143,11 +142,11 @@ def process_payment(
     cursor = conn.cursor()
 
     try:
-        # ۱. قفل‌گذاری و دریافت اطلاعات رزرو
+        # ۱. قفل رزرو جهت بررسی وضعیت
         cursor.execute(
             """
-            SELECT reservation_id, user_id, total_amount, status, expires_at
-            FROM reservations
+            SELECT reservation_id, user_id, ticket_id, quantity, status, total_price, reserved_until
+            FROM RESERVATIONS
             WHERE reservation_id = %s
             FOR UPDATE;
             """,
@@ -156,89 +155,70 @@ def process_payment(
         res = cursor.fetchone()
 
         if not res:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="رزرو مورد نظر یافت نشد."
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="رزرو یافت نشد.")
 
         if res["user_id"] != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="شما مجاز به پرداخت این رزرو نیستید."
-            )
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="دسترسی غیرمجاز.")
 
-        if res["status"] != "PENDING":
+        if res["status"] != "reserved":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"امکان پرداخت وجود ندارد. وضعیت رزرو: {res['status']}"
+                detail=f"امکان پرداخت وجود ندارد. وضعیت فعلی: {res['status']}"
             )
 
-        # ۲. بررسی مهلت زمان ۱۰ دقیقه پرداخت
-        if datetime.now() > res["expires_at"]:
-            # انقضای مهلت: به‌روزرسانی وضعیت رزرو و آزاد کردن بلیط‌ها
-            cursor.execute(
-                "UPDATE reservations SET status = 'EXPIRED' WHERE reservation_id = %s;",
-                (reservation_id,)
-            )
+        # ۲. بررسی مهلت زمان ۱۰ دقیقه
+        if datetime.now() > res["reserved_until"]:
+            # آزادکن صندلی‌ها و انقضای رزرو
+            cursor.execute("UPDATE RESERVATIONS SET status = 'expired' WHERE reservation_id = %s;", (reservation_id,))
+            cursor.execute("UPDATE RESERVED_SEATS SET status = 'released' WHERE reservation_id = %s;", (reservation_id,))
             cursor.execute(
                 """
-                UPDATE tickets 
-                SET status = 'AVAILABLE' 
-                WHERE ticket_id IN (
-                    SELECT ticket_id FROM reservation_items WHERE reservation_id = %s
-                );
+                UPDATE SEATS SET status = 'available'
+                WHERE seat_id IN (SELECT seat_id FROM RESERVED_SEATS WHERE reservation_id = %s);
                 """,
                 (reservation_id,)
             )
-            conn.commit()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="مهلت ۱۰ دقیقه‌ای پرداخت منقضی شده است."
+            cursor.execute(
+                "UPDATE TICKETS SET remaining_capacity = remaining_capacity + %s WHERE ticket_id = %s;",
+                (res["quantity"], res["ticket_id"])
             )
+            conn.commit()
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="مهلت ۱۰ دقیقه‌ای پرداخت منقضی شده است.")
 
-        # ۳. تولید کد پیگیری یکتا
-        tx_ref = f"TXN-{uuid.uuid4().hex[:10].upper()}"
+        # ۳. ثبت پرداخت
+        tx_code = f"TXN-{uuid.uuid4().hex[:10].upper()}"
+        paid_at = datetime.now()
 
-        # ۴. ثبت رکورد پرداخت
         cursor.execute(
             """
-            INSERT INTO payments (reservation_id, amount, payment_method, transaction_ref, status)
-            VALUES (%s, %s, %s, %s, 'SUCCESSFUL')
-            RETURNING payment_id, created_at;
+            INSERT INTO PAYMENTS (reservation_id, amount, method, status, paid_at, transaction_code)
+            VALUES (%s, %s, %s, 'success', %s, %s)
+            RETURNING payment_id;
             """,
-            (reservation_id, res["total_amount"], payload.payment_method, tx_ref)
+            (reservation_id, res["total_price"], payload.method, paid_at, tx_code)
         )
         pay_row = cursor.fetchone()
 
-        # ۵. به‌روزرسانی وضعیت رزرو به CONFIRMED
-        cursor.execute(
-            "UPDATE reservations SET status = 'CONFIRMED' WHERE reservation_id = %s;",
-            (reservation_id,)
-        )
-
-        # ۶. تغییر وضعیت بلیط‌ها به SOLD
+        # ۴. نهایی‌سازی وضعیت رزرو و صندلی‌ها به 'paid' و 'sold'
+        cursor.execute("UPDATE RESERVATIONS SET status = 'paid' WHERE reservation_id = %s;", (reservation_id,))
         cursor.execute(
             """
-            UPDATE tickets 
-            SET status = 'SOLD' 
-            WHERE ticket_id IN (
-                SELECT ticket_id FROM reservation_items WHERE reservation_id = %s
-            );
+            UPDATE SEATS SET status = 'sold'
+            WHERE seat_id IN (SELECT seat_id FROM RESERVED_SEATS WHERE reservation_id = %s);
             """,
             (reservation_id,)
         )
 
-        # ۷. ثبت نهایی تراکنش دیتابیس
         conn.commit()
 
         return PaymentResponse(
             payment_id=pay_row["payment_id"],
             reservation_id=reservation_id,
-            amount=res["total_amount"],
-            payment_method=payload.payment_method,
-            transaction_ref=tx_ref,
-            status="SUCCESSFUL",
-            created_at=pay_row["created_at"]
+            amount=res["total_price"],
+            method=payload.method,
+            status="success",
+            paid_at=paid_at,
+            transaction_code=tx_code
         )
 
     except HTTPException:
@@ -266,67 +246,70 @@ def get_my_reservations(current_user: dict = Depends(get_current_user)):
     cursor = conn.cursor()
 
     try:
-        # ۱. دریافت تمام رزروهای متعلق به کاربر جاری
+        # ۱. استخراج رزروهای کاربر به همراه اطلاعات مسابقه و ورزشگاه
         cursor.execute(
             """
-            SELECT reservation_id, total_amount, status, expires_at, created_at
-            FROM reservations
-            WHERE user_id = %s
-            ORDER BY created_at DESC;
+            SELECT 
+                r.reservation_id,
+                r.total_price,
+                r.status,
+                r.reserved_at,
+                r.reserved_until,
+                m.match_datetime,
+                v.name AS venue_name,
+                ht.name AS home_team,
+                at.name AS away_team
+            FROM RESERVATIONS r
+            JOIN TICKETS t ON r.ticket_id = t.ticket_id
+            JOIN MATCHES m ON t.match_id = m.match_id
+            JOIN VENUES v ON m.venue_id = v.venue_id
+            JOIN TEAMS ht ON m.home_team_id = ht.team_id
+            JOIN TEAMS at ON m.away_team_id = at.team_id
+            WHERE r.user_id = %s
+            ORDER BY r.reserved_at DESC;
             """,
             (user_id,)
         )
-        user_res_list = cursor.fetchall()
+        reservations = cursor.fetchall()
 
         result: List[UserReservationHistory] = []
 
-        for r in user_res_list:
+        for r in reservations:
             res_id = r["reservation_id"]
 
-            # ۲. دریافت جزئیات کامل بلیط‌ها، صندلی‌ها و مسابقات برای هر رزرو
+            # ۲. دریافت صندلی‌های هر رزرو
             cursor.execute(
                 """
-                SELECT 
-                    ri.ticket_id,
-                    ri.price,
-                    e.title AS event_title,
-                    e.venue_name,
-                    e.event_date,
-                    s.section_name,
-                    s.row_number,
-                    s.seat_number
-                FROM reservation_items ri
-                JOIN tickets t ON ri.ticket_id = t.ticket_id
-                JOIN events e ON t.event_id = e.event_id
-                JOIN seats s ON t.seat_id = s.seat_id
-                WHERE ri.reservation_id = %s;
+                SELECT s.seat_id, s.section, s.row, s.seat_number
+                FROM RESERVED_SEATS rs
+                JOIN SEATS s ON rs.seat_id = s.seat_id
+                WHERE rs.reservation_id = %s;
                 """,
                 (res_id,)
             )
-            items_data = cursor.fetchall()
+            seats_data = cursor.fetchall()
 
-            items_list = [
-                ReservationItemDetail(
-                    ticket_id=item["ticket_id"],
-                    price=item["price"],
-                    event_title=item["event_title"],
-                    venue_name=item["venue_name"],
-                    event_date=item["event_date"],
-                    section_name=item["section_name"],
-                    row_number=item["row_number"],
-                    seat_number=item["seat_number"]
+            seat_list = [
+                ReservationSeatDetail(
+                    seat_id=st["seat_id"],
+                    section=st["section"],
+                    row=st["row"],
+                    seat_number=st["seat_number"]
                 )
-                for item in items_data
+                for st in seats_data
             ]
 
             result.append(
                 UserReservationHistory(
                     reservation_id=res_id,
-                    total_amount=r["total_amount"],
+                    match_title=f"{r['home_team']} - {r['away_team']}",
+                    venue_name=r["venue_name"],
+                    match_datetime=r["match_datetime"],
+                    total_price=r["total_price"],
                     status=r["status"],
-                    expires_at=r["expires_at"],
-                    created_at=r["created_at"],
-                    items=items_list
+                    reserved_at=r["reserved_at"],
+                    reserved_until=r["reserved_until"],
+                    seats=seat_list
                 )
             )
 
