@@ -35,7 +35,7 @@ class SignupRequest(BaseModel):
     email: Optional[EmailStr] = Field(None, example="ali@example.com")
     phone: Optional[str] = Field(None, example="09121112233")
     password: str = Field(..., min_length=6, example="SecretPassword123")
-    role_id: int = Field("2", example="1")  # Default role is User; 1:Admin, 2:Customer, 3:Support
+    role_id: int = Field("2", example="1")  # Default role is Customer; 1:Admin, 2:Customer, 3:Support
 
 class SignupResponse(BaseModel):
     message: str
