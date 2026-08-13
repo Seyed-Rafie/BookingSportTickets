@@ -3,6 +3,7 @@ from decimal import Decimal
 import uuid
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
+from psycopg2.extras import RealDictCursor
 
 from app.core.database import get_db_connection
 from app.core.dependencies import get_current_user
@@ -32,7 +33,7 @@ def create_reservation(
     quantity = len(seat_ids)
 
     with get_db_connection() as conn:
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         try:
             # ۱. بررسی وجود و قیمت بلیط
@@ -138,7 +139,7 @@ def process_payment(
     reservation_id = payload.reservation_id
 
     with get_db_connection() as conn:
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         try:
             # ۱. قفل رزرو جهت بررسی وضعیت
@@ -241,7 +242,7 @@ def get_my_reservations(current_user: dict = Depends(get_current_user)):
     user_id = current_user["user_id"]
 
     with get_db_connection() as conn:
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         try:
             # ۱. استخراج رزروهای کاربر به همراه اطلاعات مسابقه و ورزشگاه
