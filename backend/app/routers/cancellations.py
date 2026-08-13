@@ -43,7 +43,7 @@ def calculate_cancellation_penalty(reservation_id: int):
         WHERE r.reservation_id = %s;
     """
 
-    res = execute_query(query, (reservation_id,))
+    res = execute_query(query, (reservation_id,), fetch_all=True)
 
     if not res:
         raise HTTPException(
@@ -97,7 +97,8 @@ def calculate_cancellation_penalty(reservation_id: int):
             reservation["sport_type_id"],
             hours_remaining,
             hours_remaining,
-        )
+        ), 
+        fetch_all=True
     )
 
     # ۵. تعیین درصد جریمه (در صورت عدم وجود قانون، ۲۰ درصد پیش‌فرض)
@@ -151,7 +152,8 @@ def submit_cancellation_request(
 
     res = execute_query(
         check_sql,
-        (payload.reservation_id, user_id)
+        (payload.reservation_id, user_id), 
+        fetch_all=True
     )
 
     if not res:
@@ -192,7 +194,7 @@ def submit_cancellation_request(
         LIMIT 1;
     """
 
-    duplicate = execute_query(dup_check, (payload.reservation_id,))
+    duplicate = execute_query(dup_check, (payload.reservation_id,), fetch_all=True)
 
     if duplicate:
         raise HTTPException(
@@ -217,7 +219,8 @@ def submit_cancellation_request(
 
     inserted = execute_query(
         insert_sql,
-        (payload.reservation_id, user_id, payload.user_note)
+        (payload.reservation_id, user_id, payload.user_note), 
+        fetch_all=True
     )
 
     if not inserted:

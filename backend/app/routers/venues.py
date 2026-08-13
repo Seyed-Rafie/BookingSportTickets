@@ -65,7 +65,7 @@ def get_venues(
 
     # ۵. اجرای کوئری خام روی PostgreSQL
     try:
-        db_rows = execute_query(base_sql, tuple(params))
+        db_rows = execute_query(base_sql, tuple(params), fetch_all=True)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -126,7 +126,7 @@ def search_tickets(
     base_sql += " ORDER BY m.match_datetime ASC;"
 
     # 5. اجرای Query
-    db_rows = execute_query(base_sql, tuple(params))
+    db_rows = execute_query(base_sql, tuple(params), fetch_all=True)
 
     # 6. ساخت Response
     formatted_response = []
@@ -226,7 +226,7 @@ def get_ticket_detail(ticket_id: int):
         WHERE t.ticket_id = %s;
     """
 
-    db_rows = execute_query(ticket_sql, (ticket_id,))
+    db_rows = execute_query(ticket_sql, (ticket_id,), fetch_all=True)
 
     if not db_rows:
         raise HTTPException(
@@ -242,7 +242,7 @@ def get_ticket_detail(ticket_id: int):
         INNER JOIN TICKET_FACILITIES tf ON f.facility_id = tf.facility_id
         WHERE tf.ticket_id = %s;
     """
-    facilities_rows = execute_query(facilities_sql, (ticket_id,))
+    facilities_rows = execute_query(facilities_sql, (ticket_id,), fetch_all=True)
     facilities_list = [f["name"] for f in facilities_rows]
 
     # 5. دریافت جزئیات اختصاصی بر اساس sport_type_id (به جای بررسی رشته‌ای)
@@ -253,17 +253,17 @@ def get_ticket_detail(ticket_id: int):
 
     if current_sport_id == SPORT_FOOTBALL_ID:
         q = "SELECT gate_number, has_parking, vip_services FROM FOOTBALL_DETAILS WHERE ticket_id = %s;"
-        res = execute_query(q, (ticket_id,))
+        res = execute_query(q, (ticket_id,), fetch_all=True)
         football_details = res[0] if res else None
 
     elif current_sport_id == SPORT_VOLLEYBALL_ID:
         q = "SELECT entrance_gate, special_services FROM VOLLEYBALL_DETAILS WHERE ticket_id = %s;"
-        res = execute_query(q, (ticket_id,))
+        res = execute_query(q, (ticket_id,), fetch_all=True)
         volleyball_details = res[0] if res else None
 
     elif current_sport_id == SPORT_BASKETBALL_ID:
         q = "SELECT entrance_gate, vip_services, has_food_court FROM BASKETBALL_DETAILS WHERE ticket_id = %s;"
-        res = execute_query(q, (ticket_id,))
+        res = execute_query(q, (ticket_id,), fetch_all=True)
         basketball_details = res[0] if res else None
 
     # 6. ساخت Response نهایی
