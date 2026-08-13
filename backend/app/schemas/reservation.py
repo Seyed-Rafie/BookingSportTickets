@@ -8,65 +8,54 @@ from pydantic import BaseModel, Field
 # ۱. مدل‌های API شماره ۷: رزرو موقت (POST /reservations)
 # ==========================================
 class ReservationCreate(BaseModel):
-    # دقت کنید: user_id اینجا نیست! از توکن JWT خوانده خواهد شد.
-    ticket_ids: List[int] = Field(
-        ..., 
-        min_length=1, 
-        description="لیست شناسه بلیط‌های درخواستی برای رزرو موقت"
-    )
-
-class TicketSummary(BaseModel):
-    ticket_id: int
-    price: Decimal
+    ticket_id: int = Field(..., description="شناسه بلیط مسابقه")
+    seat_ids: List[int] = Field(..., min_length=1, description="لیست شناسه‌های صندلی انتخابی")
 
 class ReservationResponse(BaseModel):
     reservation_id: int
     user_id: int
-    total_amount: Decimal
+    ticket_id: int
+    quantity: int
     status: str
-    expires_at: datetime
-    created_at: datetime
-    tickets: List[TicketSummary]
+    total_price: Decimal
+    reserved_at: datetime
+    reserved_until: datetime
+    seat_ids: List[int]
 
 
 # ==========================================
-# ۲. مدل‌های API شماره ۸: ثبت پرداخت (POST /payments)
+# ۲. مدل‌های API شماره ۸: ثبت پرداخت (POST /reservations/payments)
 # ==========================================
 class PaymentCreate(BaseModel):
-    reservation_id: int = Field(..., description="شناسه رزروی که قرار است پرداخت شود")
-    payment_method: str = Field(
-        ..., 
-        example="CARD", 
-        description="روش پرداخت (مثلاً: CARD، WALLET)"
-    )
+    reservation_id: int = Field(..., description="شناسه رزرو")
+    method: str = Field(..., example="bank_card", description="روش پرداخت: bank_card, online, wallet, fake")
 
 class PaymentResponse(BaseModel):
     payment_id: int
     reservation_id: int
     amount: Decimal
-    payment_method: str
-    transaction_ref: str
+    method: str
     status: str
-    created_at: datetime
+    paid_at: datetime
+    transaction_code: str
 
 
 # ==========================================
 # ۳. مدل‌های API شماره ۱۱: تاریخچه خرید کاربر (GET /reservations/me)
 # ==========================================
-class ReservationItemDetail(BaseModel):
-    ticket_id: int
-    price: Decimal
-    event_title: str
-    venue_name: str
-    event_date: datetime
-    section_name: str
-    row_number: str
-    seat_number: str
+class ReservationSeatDetail(BaseModel):
+    seat_id: int
+    section: Optional[str]
+    row: Optional[str]
+    seat_number: Optional[str]
 
 class UserReservationHistory(BaseModel):
     reservation_id: int
-    total_amount: Decimal
+    match_title: str
+    venue_name: str
+    match_datetime: datetime
+    total_price: Decimal
     status: str
-    expires_at: datetime
-    created_at: datetime
-    items: List[ReservationItemDetail]
+    reserved_at: datetime
+    reserved_until: datetime
+    seats: List[ReservationSeatDetail]
