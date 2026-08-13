@@ -4,7 +4,7 @@ from jose import jwt
 from app.core.config import settings
 from app.core.database import execute_query
 
-# Configure OAuth2 bearer scheme for Swagger UI
+# Configure Http bearer scheme for Swagger UI
 security_scheme = HTTPBearer()
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)) -> dict:
@@ -53,3 +53,15 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         )
 
     return user
+
+def get_current_support_user(current_user: dict = Depends(get_current_user)) -> dict:
+    """
+    Ensure current authenticated user has Admin (1) or Support (3) role.
+    """
+    allowed_roles = [1, 3]  # 1: Admin, 3: Support
+    if current_user.get("role_id") not in allowed_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Support or Admin privileges required."
+        )
+    return current_user
