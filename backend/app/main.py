@@ -4,6 +4,7 @@ from app.core.redis_client import check_redis_health
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.reports import router as reports_router
+from app.routers.admin import router as admin_router
 from app.routers import reservations  # ۱. این خط را برای اضافه کردن روتر خودت اضافه کن
 
 app = FastAPI(
@@ -15,6 +16,7 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(reports_router)
+app.include_router(admin_router)
 
 # ۲. این خط را اضافه کن تا APIهای رزرو و پرداخت به برنامه متصل شوند
 app.include_router(reservations.router)
