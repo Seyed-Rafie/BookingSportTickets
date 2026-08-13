@@ -21,7 +21,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     )
     
     try:
-        # Decode signed JWT token
+        # Decode signed JWT token0=
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id_str: str = payload.get("sub")
         if user_id_str is None:

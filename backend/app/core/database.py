@@ -1,65 +1,80 @@
-import psycopg2
-from psycopg2.pool import ThreadedConnectionPool
-from psycopg2.extras import RealDictCursor
+import logging
 from contextlib import contextmanager
-from app.core.config import settings
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from psycopg2.pool import ThreadedConnectionPool
+from config import settings
 
+
+logger = logging.getLogger(__name__)
+
+# ساخت ساده Pool
 try:
-    db_pool = ThreadedConnectionPool(
-        minconn=1,
-        maxconn=10,
-        dsn=settings.DATABASE_URL
-    )
-    print("connected to neon connection pool successfully")
+  db_pool = ThreadedConnectionPool(1, 5, dsn=settings.DATABASE_URL)
 except Exception as e:
-    print(f"error with connection to neon: {e}")
-    db_pool = None
+  logger.error(f"خطا در ساخت Pool: {e}")
+  db_pool = None
 
 
 @contextmanager
 def get_db_connection():
-    # get and drop automatically connection
-    if db_pool is None:
-        raise Exception("db_pool is None")
-    
+  if db_pool is None:
+    raise RuntimeError("ارتباط با دیتابیس برقرار نیست.")
+
+  conn = db_pool.getconn()
+
+  # ۱. بررسی زنده بودن کانکشن (مخصوصاً برای Neon)
+  try:
+    with conn.cursor() as cur:
+      cur.execute("SELECT 1;")
+  except (psycopg2.OperationalError, psycopg2.InterfaceError):
+    # اگر کانکشن قطع شده بود، آن را می‌بندیم و یکی جدید می‌گیریم
+    db_pool.putconn(conn, close=True)
     conn = db_pool.getconn()
-    try:
-        yield conn
-    finally:
-        # drop connection
-        db_pool.putconn(conn)
+
+  # ۲. اجرای کوئری و مدیریت خطا
+  try:
+    yield conn
+  except Exception:
+    conn.rollback()  # لغو تغییرات در صورت بروز خطا
+    raise
+  finally:
+    # ۳. بازگرداندن کانکشن به Pool
+    if conn:
+      db_pool.putconn(conn)
 
 
-def execute_query(query: str, params: tuple = None, fetch_one: bool = False, fetch_all: bool = False, commit: bool = False):
-    """
-    function for run and return outputs of sql query
-    outputs return in dict form
-    """
-    with get_db_connection() as conn:
-        # RealDictCursor is for returning output in dict form
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(query, params or ())
-            
-            result = None
-            if fetch_one:
-                row = cursor.fetchone()
-                result = dict(row) if row else None
-            elif fetch_all:
-                rows = cursor.fetchall()
-                result = [dict(row) for row in rows] if rows else []
+def execute_query(
+    query: str,
+    params: tuple = (),
+    fetch_one: bool = False,
+    fetch_all: bool = False,
+    commit: bool = False,
+):
+  """تابع کمکی برای اجرای کوئری‌ها"""
+  with get_db_connection() as conn:
+    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+      cursor.execute(query, params or ())
+      result = None
 
-            # commit is necessary for insert, update, delete
-            if commit:
-                conn.commit()
-                
-            return result
+      if fetch_one:
+        row = cursor.fetchone()
+        result = dict(row) if row else None
+      elif fetch_all:
+        rows = cursor.fetchall()
+        result = [dict(r) for r in rows] if rows else []
 
+      if commit:
+        conn.commit()
+
+      return result
 
 def check_db_health() -> bool:
-    # check db healt by run a simple query
-    try:
-        res = execute_query("SELECT 1 AS status;", fetch_one=True)
-        return res is not None and res.get("status") == 1
-    except Exception as e:
-        print(f"error in db health check: {e}")
-        return False
+  """بررسی سلامت دیتابیس با اجرای یک کوئری ساده"""
+  try:
+    res = execute_query("SELECT 1 AS status;", fetch_one=True)
+    # با isinstance به پایتون و Pylance ثابت می‌کنیم که res حتماً دیکشنری است
+    return isinstance(res, dict) and res.get("status") == 1
+  except Exception as e:
+    logger.error(f"Error in DB health check: {e}")
+    return False

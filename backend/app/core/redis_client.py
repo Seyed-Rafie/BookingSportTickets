@@ -1,98 +1,130 @@
 import json
+import logging
 import redis
 from typing import Any, Optional
 from app.core.config import settings
 
-# create Redis client
-# decode_responses=True, is for returning data in str form, not bytes
+logger = logging.getLogger(__name__)
+
+# ایجاد کلاینت Redis و تست اتصال واقعی
 try:
-    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
-    print("connected to redis successfully")
+    redis_client: Optional[redis.Redis] = redis.from_url(
+        settings.REDIS_URL, decode_responses=True
+    )
+    # تست واقعی شبکه جهت اطمینان از بالا بودن Redis
+    redis_client.ping()
+    logger.info("Connected to Redis successfully.")
 except Exception as e:
-    print(f"error with connection to redis: {e}")
+    logger.error(f"Error connecting to Redis: {e}")
     redis_client = None
 
 
 # ==========================================
-# 1. managing OTP (one-time password)
+# ۱. مدیریت کد یک‌بار مصرف (OTP)
 # ==========================================
 
 def set_otp(phone: str, code: str, ttl_seconds: int = 120) -> bool:
     if not redis_client:
         return False
     key = f"otp:{phone}"
-    return redis_client.setex(key, ttl_seconds, code)
+    try:
+        return bool(redis_client.setex(key, ttl_seconds, code))
+    except Exception as e:
+        logger.error(f"Error setting OTP for {phone}: {e}")
+        return False
 
 
 def get_otp(phone: str) -> Optional[str]:
     if not redis_client:
         return None
     key = f"otp:{phone}"
-    return redis_client.get(key)
+    try:
+        return redis_client.get(key)
+    except Exception as e:
+        logger.error(f"Error getting OTP for {phone}: {e}")
+        return None
 
 
 def delete_otp(phone: str) -> bool:
-    # delete code after like successful use
     if not redis_client:
         return False
     key = f"otp:{phone}"
-    return redis_client.delete(key) > 0
+    try:
+        return bool(redis_client.delete(key) > 0)
+    except Exception as e:
+        logger.error(f"Error deleting OTP for {phone}: {e}")
+        return False
 
 
 # ==========================================
-# 2. manage Caching
+# ۲. مدیریت کش (Caching)
 # ==========================================
 
 def set_cache(key: str, data: Any, ttl_seconds: int = 300) -> bool:
-    # save data to cash with 5 minutes ttl (time to live)
     if not redis_client:
         return False
     try:
         json_data = json.dumps(data, ensure_ascii=False)
-        return redis_client.setex(key, ttl_seconds, json_data)
+        return bool(redis_client.setex(key, ttl_seconds, json_data))
     except Exception as e:
-        print(f"error in saving cash in redis: {e}")
+        logger.error(f"Error setting cache for key '{key}': {e}")
         return False
 
 
 def get_cache(key: str) -> Optional[Any]:
-    # getting cash and convert it to dictionary
     if not redis_client:
         return None
     try:
         cached_val = redis_client.get(key)
-        if cached_val:
+        if isinstance(cached_val, str):
             return json.loads(cached_val)
         return None
     except Exception as e:
-        print(f"error in read cash in redis: {e}")
+        logger.error(f"Error reading cache for key '{key}': {e}")
         return None
 
 
 def clear_cache_pattern(pattern: str) -> int:
-    # delete cash by pattern (like ticket:*, delete all data for tickets)
-    if not redis_client:
-        return 0
-    try:
-        keys = redis_client.keys(pattern)
-        if keys:
-            return redis_client.delete(*keys)
-        return 0
-    except Exception as e:
-        print(f"error with deleteing cash with tihs pattern ({pattern}): {e}")
-        return 0
+  """حذف امن کلیدها بر اساس الگوی الگوریتمی به جای استفاده از KEYS"""
+  if not redis_client:
+    return 0
+  try:
+    deleted_count = 0
+    pipe = redis_client.pipeline()
+    batch_size = 0
 
+    for key in redis_client.scan_iter(match=pattern, count=100):
+      pipe.delete(key)
+      batch_size += 1
+
+      # اجرای دستورات در دسته‌های ۱۰۰ تایی
+      if batch_size >= 100:
+        results = (
+            pipe.execute()
+        )  # خروجی شامل لیست نتایج است (مثلاً [1, 1, 0, 1])
+        deleted_count += sum(results)
+        batch_size = 0
+
+    # اجرای دسته‌های باقی‌مانده (کمتر از ۱۰۰)
+    if batch_size > 0:
+      results = pipe.execute()
+      deleted_count += sum(results)
+
+    return deleted_count
+  except Exception as e:
+    # کوتیشن بعد از {pattern} اصلاح شد
+    logger.error(f"Error deleting cache pattern '{pattern}': {e}")
+    return 0
 
 # ==========================================
-# ۳. checking redis health 
+# ۳. بررسی سلامت Redis
 # ==========================================
 
 def check_redis_health() -> bool:
-    # checking health redis with ping() function
     if not redis_client:
         return False
     try:
-        return redis_client.ping()
+        return bool(redis_client.ping())
     except Exception as e:
-        print(f"error in check Redis health: {e}")
+        logger.error(f"Error checking Redis health: {e}")
         return False
