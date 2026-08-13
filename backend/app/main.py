@@ -1,35 +1,58 @@
 from fastapi import FastAPI, HTTPException, status
+
 from app.core.database import check_db_health
 from app.core.redis_client import check_redis_health
-from app.routers.auth import router as auth_router
-from app.routers.users import router as users_router
+
+# ایمپورت تمامی روترهای پروژه
+from app.routers import (
+    auth,
+    users,
+    venues,
+    tickets,
+    cancellations,
+)
+
 
 app = FastAPI(
     title="Sports Ticketing System API",
-    description="booking sport ticket platform",
+    description="Booking sports tickets platform API with FastAPI, PostgreSQL, and Redis",
     version="1.0.0"
 )
 
-app.include_router(auth_router)
-app.include_router(users_router)
+# ------------------------------------------------------------
+# ثبت (Register) تمامی روترهای اعضای تیم
+# ------------------------------------------------------------
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(venues.router)
+app.include_router(tickets.router)
+app.include_router(cancellations.router)
 
+
+# ------------------------------------------------------------
+# Endpoint‌های عمومی پروژه
+# ------------------------------------------------------------
 @app.get("/", tags=["Root"])
 def read_root():
-    # welcome message and redirect to Swagger
     return {
-        "message": "welcome!",
+        "message": "Welcome to Sports Ticketing System API!",
         "docs_url": "/docs"
     }
 
+
 @app.get("/health", tags=["Health Check"])
 def health_check():
-    # checking health of database and redis
+    # بررسی سلامت دیتابیس و ردیس
     db_healthy = check_db_health()
-    redis_healthy = check_redis_healthy = check_redis_health()
+    redis_healthy = check_redis_health()
 
     is_all_healthy = db_healthy and redis_healthy
 
-    status_code = status.HTTP_200_OK if is_all_healthy else status.HTTP_503_SERVICE_UNAVAILABLE
+    status_code = (
+        status.HTTP_200_OK
+        if is_all_healthy
+        else status.HTTP_503_SERVICE_UNAVAILABLE
+    )
 
     response_payload = {
         "status": "healthy" if is_all_healthy else "unhealthy",
