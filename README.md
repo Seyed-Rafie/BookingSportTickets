@@ -16,6 +16,7 @@ pip install -r requirements.txt
 3. با دستور زیر، بکند را اجرا کنید:
 ``` bash
 uvicorn app.main:app --reload
+#or
 uvicorn app.main:app --reload --port 8001
 ```
 
