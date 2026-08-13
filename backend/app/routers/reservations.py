@@ -166,8 +166,12 @@ def process_payment(
                     detail=f"امکان پرداخت وجود ندارد. وضعیت فعلی: {res['status']}"
                 )
 
-            # ۲. بررسی مهلت زمان ۱۰ دقیقه
-            if datetime.now() > res["reserved_until"]:
+            # ۲. بررسی مهلت زمان ۱۰ دقیقه (با حذف منطق منطقه زمانی جهت مقایسه صحیح)
+            reserved_until = res["reserved_until"]
+            if hasattr(reserved_until, "tzinfo") and reserved_until.tzinfo is not None:
+                reserved_until = reserved_until.replace(tzinfo=None)
+
+            if datetime.now() > reserved_until:
                 # آزادکن صندلی‌ها و انقضای رزرو
                 cursor.execute("UPDATE RESERVATIONS SET status = 'expired' WHERE reservation_id = %s;", (reservation_id,))
                 cursor.execute("UPDATE RESERVED_SEATS SET status = 'released' WHERE reservation_id = %s;", (reservation_id,))
