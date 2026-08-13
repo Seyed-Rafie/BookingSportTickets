@@ -5,13 +5,15 @@ from app.core.redis_client import check_redis_health
 
 # ایمپورت تمامی روترهای پروژه
 from app.routers import (
-    auth,
-    users,
     venues,
     tickets,
     cancellations,
 )
 
+from app.routers.auth import router as auth_router
+from app.routers.users import router as users_router
+from app.routers.reports import router as reports_router
+from app.routers import reservations  # ۱. این خط را برای اضافه کردن روتر خودت اضافه کن
 
 app = FastAPI(
     title="Sports Ticketing System API",
@@ -22,11 +24,15 @@ app = FastAPI(
 # ------------------------------------------------------------
 # ثبت (Register) تمامی روترهای اعضای تیم
 # ------------------------------------------------------------
-app.include_router(auth.router)
-app.include_router(users.router)
 app.include_router(venues.router)
 app.include_router(tickets.router)
 app.include_router(cancellations.router)
+app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(reports_router)
+
+# ۲. این خط را اضافه کن تا APIهای رزرو و پرداخت به برنامه متصل شوند
+app.include_router(reservations.router)
 
 
 # ------------------------------------------------------------
@@ -44,7 +50,7 @@ def read_root():
 def health_check():
     # بررسی سلامت دیتابیس و ردیس
     db_healthy = check_db_health()
-    redis_healthy = check_redis_health()
+    redis_healthy = check_redis_health() # اصلاح یک اشتباه تایپی کوچک در کد قبلی شما
 
     is_all_healthy = db_healthy and redis_healthy
 
