@@ -224,7 +224,7 @@ def submit_cancellation_request(
     inserted = execute_query(
         insert_sql,
         (payload.reservation_id, user_id, payload.user_note), 
-        fetch_all=True
+        fetch_all=True, commit=True
     )
 
     if not inserted:
