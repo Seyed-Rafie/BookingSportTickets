@@ -24,7 +24,10 @@ router = APIRouter(
     "/penalty-check/{reservation_id}",
     response_model=PenaltyCheckResponseSchema
 )
-def calculate_cancellation_penalty(reservation_id: int):
+def calculate_cancellation_penalty(
+    reservation_id: int,
+    current_user: dict = Depends(get_current_user)
+):
 
     # ۱. دریافت رزرو + بلیت + مسابقه
     query = """
@@ -40,15 +43,16 @@ def calculate_cancellation_penalty(reservation_id: int):
         FROM RESERVATIONS r
         INNER JOIN TICKETS t ON r.ticket_id = t.ticket_id
         INNER JOIN MATCHES m ON t.match_id = m.match_id
-        WHERE r.reservation_id = %s;
+        WHERE r.reservation_id = %s AND r.user_id = %s;
     """
 
-    res = execute_query(query, (reservation_id,), fetch_all=True)
+    user_id = current_user["user_id"]
+    res = execute_query(query, (reservation_id, user_id), fetch_all=True)
 
     if not res:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="رزرو مورد نظر یافت نشد."
+            detail="رزرو مورد نظر یافت نشد یا به آن دسترسی ندارید."
         )
 
     reservation = res[0]
