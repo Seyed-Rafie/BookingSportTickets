@@ -83,13 +83,12 @@ const API = {
 
         login: (credentials) => 
             request('/auth/login', { method: 'POST', body: credentials }),
-
-        // اصلاح مسیرها به /users/profile
+        
         getProfile: () => 
-            request('/users/profile', { method: 'GET' }),
+            request('/auth/me', { method: 'GET' }),
 
         updateProfile: (profileData) => 
-            request('/users/profile', { method: 'PUT', body: profileData }),
+            request('/auth/me', { method: 'PUT', body: profileData }),
     },
 
     // -------------------------------------------------------------
