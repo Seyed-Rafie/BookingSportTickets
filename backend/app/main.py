@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, status
 
 from app.core.database import check_db_health
 from app.core.redis_client import check_redis_health
+from app.core.elasticsearch import check_es_health
 
 # ایمپورت تمامی روترهای پروژه
 from app.routers import (
@@ -52,9 +53,10 @@ def read_root():
 def health_check():
     # بررسی سلامت دیتابیس و ردیس
     db_healthy = check_db_health()
-    redis_healthy = check_redis_health() # اصلاح یک اشتباه تایپی کوچک در کد قبلی شما
+    redis_healthy = check_redis_health()
+    es_health = check_es_health()
 
-    is_all_healthy = db_healthy and redis_healthy
+    is_all_healthy = db_healthy and redis_healthy and es_health
 
     status_code = (
         status.HTTP_200_OK
@@ -66,7 +68,8 @@ def health_check():
         "status": "healthy" if is_all_healthy else "unhealthy",
         "services": {
             "postgres_neon": "connected" if db_healthy else "disconnected",
-            "redis_cache": "connected" if redis_healthy else "disconnected"
+            "redis_cache": "connected" if redis_healthy else "disconnected",
+            "elasticsearch": "connected" if es_health else "disconnected"
         }
     }
 
