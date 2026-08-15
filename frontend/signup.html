@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تکمیل ثبت‌نام</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #d1d5db;
+            --error-bg: #fde8e8;
+            --error-color: #9b1c1c;
+            --success-bg: #def7ec;
+            --success-color: #03543f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .signup-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            padding: 2rem;
+        }
+
+        .signup-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .signup-header h1 {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .signup-header p {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .message-box {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .message-box.error {
+            background-color: var(--error-bg);
+            color: var(--error-color);
+            border: 1px solid #fbd5d5;
+        }
+
+        .message-box.success {
+            background-color: var(--success-bg);
+            color: var(--success-color);
+            border: 1px solid #bcf0da;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        input[readonly] {
+            background-color: #f9fafb;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-submit:disabled {
+            background-color: #a5b4fc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="signup-card">
+        <div class="signup-header">
+            <h1>تکمیل اطلاعات حساب</h1>
+            <p>لطفاً اطلاعات خود را جهت ایجاد حساب کاربری وارد کنید</p>
+        </div>
+
+        <!-- باکس نمایش پیام‌های خطا یا موفقیت -->
+        <div id="message-box" class="message-box hidden"></div>
+
+        <!-- فرم اصلی ثبت‌نام -->
+        <form id="form-signup" novalidate>
+            
+            <!-- نام و نام خانوادگی -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="first-name">نام <span style="color:red;">*</span></label>
+                    <input type="text" id="first-name" placeholder="مثال: علی" required autocomplete="given-name">
+                </div>
+
+                <div class="form-group">
+                    <label for="last-name">نام خانوادگی <span style="color:red;">*</span></label>
+                    <input type="text" id="last-name" placeholder="مثال: محمدی" required autocomplete="family-name">
+                </div>
+            </div>
+
+            <!-- شماره موبایل (قفل‌شدن به‌صورت پویا توسط JS تعیین می‌شود) -->
+            <div class="form-group">
+                <label for="phone">شماره موبایل</label>
+                <input type="tel" id="phone" dir="ltr" placeholder="09xxxxxxxxx">
+            </div>
+
+            <!-- ایمیل (قفل‌شدن به‌صورت پویا توسط JS تعیین می‌شود) -->
+            <div class="form-group">
+                <label for="email">ایمیل</label>
+                <input type="email" id="email" dir="ltr" placeholder="example@domain.com" autocomplete="email">
+            </div>
+
+            <!-- رمز عبور -->
+            <div class="form-group">
+                <label for="password">رمز عبور <span style="color:red;">*</span></label>
+                <input type="password" id="password" dir="ltr" placeholder="حداقل ۶ کاراکتر" required autocomplete="new-password">
+            </div>
+
+            <!-- تکرار رمز عبور -->
+            <div class="form-group">
+                <label for="confirm-password">تکرار رمز عبور <span style="color:red;">*</span></label>
+                <input type="password" id="confirm-password" dir="ltr" placeholder="تکرار رمز عبور" required autocomplete="new-password">
+            </div>
+
+            <!-- فیلد مخفی نقش کاربر -->
+            <input type="hidden" id="role-id" value="2">
+
+            <!-- دکمه ثبت فرم -->
+            <button type="submit" id="btn-signup" class="btn-submit">تکمیل ثبت‌نام</button>
+        </form>
+    </div>
+
+    <!-- اسکریپت‌های مربوطه -->
+    <script src="js/api.js"></script>
+    <script src="js/signup.js"></script>
+</body>
+</html>

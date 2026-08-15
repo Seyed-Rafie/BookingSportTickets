@@ -14,12 +14,24 @@
         
         <!-- مرحله ۱: دریافت شماره موبایل -->
         <form id="form-send-otp" class="auth-form">
-            <div class="form-group">
-                <label for="mobile">شماره موبایل:</label>
-                <input type="tel" name="mobile" id="mobile" inputmode="numeric" placeholder="۰۹۱۲۳۴۵۶۷۸۹" required dir="ltr">
-            </div>
-            <button type="submit" id="btn-send-otp">ارسال کد تایید</button>
-        </form>
+    <div class="form-group">
+        <label for="identifier">شماره موبایل یا ایمیل:</label>
+
+        <input
+            type="text"
+            name="identifier"
+            id="identifier"
+            placeholder="09123456789 یا example@gmail.com"
+            autocomplete="email"
+            required
+            dir="ltr"
+        >
+    </div>
+
+    <button type="submit" id="btn-send-otp">
+        ارسال کد تایید
+    </button>
+</form>
 
         <!-- مرحله ۲: ورود کد OTP (پنهان در ابتدا) -->
         <form id="form-verify-otp" class="auth-form hidden">

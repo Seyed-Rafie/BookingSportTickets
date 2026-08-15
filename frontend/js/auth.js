@@ -1,118 +1,198 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const formSendOtp = document.getElementById('form-send-otp');
-    const formVerifyOtp = document.getElementById('form-verify-otp');
-    const mobileInput = document.getElementById('mobile');
-    const otpInput = document.getElementById('otp-code');
+    // ============================================================
+    // عناصر صفحه
+    // ============================================================
+
+    const sendOtpForm = document.getElementById('form-send-otp');
+    const verifyOtpForm = document.getElementById('form-verify-otp');
+
+    const identifierInput = document.getElementById('identifier');
+    const otpCodeInput = document.getElementById('otp-code');
     const displayMobile = document.getElementById('display-mobile');
+
+    const btnSendOtp = document.getElementById('btn-send-otp');
+    const btnVerifyOtp = document.getElementById('btn-verify-otp');
     const btnBack = document.getElementById('btn-back');
+
     const messageBox = document.getElementById('message-box');
 
-    // اگر کاربر قبلاً لاگین کرده بود، انتقال به صفحه اصلی
+    // نگهداری شناسه ورود (ایمیل یا شماره موبایل) در حافظه موقت
+    let currentIdentifier = '';
+
+
+    // ============================================================
+    // 1. بررسی وضعیت ورود قبلی کاربر
+    // ============================================================
+
     if (localStorage.getItem('token')) {
         window.location.href = 'index.html';
         return;
     }
 
-    // تابع نمایش پیام‌های خطا و موفقیت
-    function showMessage(msg, isError = true) {
-        messageBox.textContent = msg;
+
+    // ============================================================
+    // توابع مدیریت پیام‌ها
+    // ============================================================
+
+    function showMessage(message, isError = true) {
+        if (!messageBox) return;
+
+        messageBox.textContent = message;
         messageBox.className = `message-box ${isError ? 'error' : 'success'}`;
         messageBox.classList.remove('hidden');
     }
 
-    // Regex برای اعتبارسنجی شماره موبایل ایران
-    const iranMobileRegex = /^09\d{9}$/;
-
-    // مرحله ۱: ارسال درخواست دریافت کد OTP
-    formSendOtp.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const mobile = mobileInput.value.trim();
-
-        if (!mobile) {
-            showMessage('لطفاً شماره موبایل را وارد کنید.');
-            return;
+    function hideMessage() {
+        if (messageBox) {
+            messageBox.classList.add('hidden');
         }
+    }
 
-        if (!iranMobileRegex.test(mobile)) {
-            showMessage('فرمت شماره موبایل صحیح نیست (مثال: 09123456789)');
-            return;
-        }
 
-        const submitBtn = document.getElementById('btn-send-otp');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'در حال ارسال...';
+    // ============================================================
+    // 2. مدیریت ارسال کد تأیید (مرحله اول)
+    // ============================================================
 
-        try {
-            // فراخوانی متمرکز از طریق API.auth (که identifier را خودش تنظیم می‌کند)
-            const response = await API.auth.sendOTP(mobile);
+    if (sendOtpForm) {
+        sendOtpForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            hideMessage();
 
-            displayMobile.textContent = mobile;
-            formSendOtp.classList.add('hidden');
-            formVerifyOtp.classList.remove('hidden');
-            showMessage(response?.message || 'کد تایید ارسال شد.', false);
-            otpInput.focus();
-        } catch (error) {
-            // خطاهای HTTP که از api.js پرتاب می‌شوند در catch دریافت می‌شوند
-            showMessage(error.message || 'خطا در ارسال کد تایید.');
-            console.error('Send OTP Error:', error);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'ارسال کد تایید';
-        }
-    });
+            const identifier = identifierInput?.value.trim() || '';
 
-    // مرحله ۲: تایید کد OTP و دریافت توکن JWT یا هدایت به ثبت‌نام
-    formVerifyOtp.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const mobile = mobileInput.value.trim();
-        const code = otpInput.value.trim();
-
-        if (!code) {
-            showMessage('لطفاً کد تایید را وارد کنید.');
-            return;
-        }
-
-        const submitBtn = document.getElementById('btn-verify-otp');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'در حال بررسی...';
-
-        try {
-            // فراخوانی متمرکز تایید کد
-            const response = await API.auth.verifyOTP(mobile, code);
-
-            if (response?.access_token) {
-                // ۱. کاربر قدیمی -> ذخیره توکن و ورود به صفحه اصلی
-                localStorage.setItem('token', response.access_token);
-                showMessage('ورود با موفقیت انجام شد. در حال انتقال...', false);
-
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-            } else if (response?.is_new_user) {
-                // ۲. کاربر جدید -> ذخیره شماره و انتقال به صفحه تکمیل ثبت‌نام
-                localStorage.setItem('signup_identifier', mobile);
-                showMessage('کد تایید شد. در حال انتقال به تکمیل ثبت‌نام...', false);
-
-                setTimeout(() => {
-                    window.location.href = 'signup.html';
-                }, 1000);
-            } else {
-                showMessage(response?.message || 'پاسخ معتبری از سرور دریافت نشد.');
+            if (!identifier) {
+                showMessage('لطفاً شماره موبایل یا ایمیل خود را وارد کنید.');
+                identifierInput?.focus();
+                return;
             }
-        } catch (error) {
-            showMessage(error.message || 'کد تایید اشتباه است یا منقضی شده است.');
-            console.error('Verify OTP Error:', error);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'تایید و ورود';
-        }
-    });
 
-    // بازگشت به فرم شماره موبایل
-    btnBack.addEventListener('click', () => {
-        formVerifyOtp.classList.add('hidden');
-        formSendOtp.classList.remove('hidden');
-        messageBox.classList.add('hidden');
-        otpInput.value = '';
-    });
+            // غیرفعال کردن دکمه هنگام ارسال درخواست
+            if (btnSendOtp) {
+                btnSendOtp.disabled = true;
+                btnSendOtp.textContent = 'در حال ارسال...';
+            }
+
+            try {
+                // فراخوانی API ارسال OTP
+                const response = await API.auth.sendOtp({ identifier });
+
+                currentIdentifier = identifier;
+
+                if (displayMobile) {
+                    displayMobile.textContent = identifier;
+                }
+
+                // تغییر فرم‌ها: پنهان کردن فرم ارسال و نمایش فرم ورود کد
+                sendOtpForm.classList.add('hidden');
+                verifyOtpForm.classList.remove('hidden');
+
+                showMessage(response?.message || 'کد تأیید با موفقیت ارسال شد.', false);
+
+                if (otpCodeInput) {
+                    otpCodeInput.focus();
+                }
+
+            } catch (error) {
+                console.error('Send OTP Error:', error);
+                showMessage(error?.message || 'خطا در ارسال کد تأیید. لطفاً مجدداً تلاش کنید.');
+            } finally {
+                if (btnSendOtp) {
+                    btnSendOtp.disabled = false;
+                    btnSendOtp.textContent = 'ارسال کد تایید';
+                }
+            }
+        });
+    }
+
+
+    // ============================================================
+    // 3. مدیریت تأیید کد OTP (مرحله دوم)
+    // ============================================================
+
+    if (verifyOtpForm) {
+        verifyOtpForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            hideMessage();
+
+            const otpCode = otpCodeInput?.value.trim() || '';
+
+            if (!otpCode) {
+                showMessage('لطفاً کد تأیید را وارد کنید.');
+                otpCodeInput?.focus();
+                return;
+            }
+
+            // غیرفعال کردن دکمه هنگام ارسال درخواست
+            if (btnVerifyOtp) {
+                btnVerifyOtp.disabled = true;
+                btnVerifyOtp.textContent = 'در حال بررسی...';
+            }
+
+            try {
+                // فراخوانی API بررسی کد OTP
+                const response = await API.auth.verifyOtp({
+                    identifier: currentIdentifier,
+                    code: otpCode
+                });
+
+                // حالت اول: کاربر قبلاً ثبت‌نام کرده و توکن دریافت شده است
+                if (response?.access_token) {
+                    localStorage.setItem('token', response.access_token);
+                    localStorage.removeItem('signup_identifier');
+
+                    showMessage(response.message || 'ورود با موفقیت انجام شد. در حال انتقال...', false);
+
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                    return;
+                }
+
+                // حالت دوم: کاربر جدید است و باید به صفحه تکمیل ثبت‌نام منتقل شود
+                if (response?.is_new_user || response?.requires_signup) {
+                    // ذخیره شناسه تأییدشده در LocalStorage برای استفاده در signup.js
+                    localStorage.setItem('signup_identifier', currentIdentifier);
+
+                    showMessage('کد تأیید شد. در حال انتقال به صفحه تکمیل ثبت‌نام...', false);
+
+                    setTimeout(() => {
+                        window.location.href = 'signup.html';
+                    }, 1000);
+                    return;
+                }
+
+                showMessage(response?.message || 'کد وارد شده صحیح نمی‌باشد.');
+
+            } catch (error) {
+                console.error('Verify OTP Error:', error);
+                showMessage(error?.message || 'کد تأیید اشتباه است یا منقضی شده است.');
+            } finally {
+                if (btnVerifyOtp) {
+                    btnVerifyOtp.disabled = false;
+                    btnVerifyOtp.textContent = 'تایید و ورود';
+                }
+            }
+        });
+    }
+
+
+    // ============================================================
+    // 4. دکمه بازگشت / تغییر شماره
+    // ============================================================
+
+    if (btnBack) {
+        btnBack.addEventListener('click', () => {
+            hideMessage();
+
+            if (otpCodeInput) otpCodeInput.value = '';
+
+            verifyOtpForm.classList.add('hidden');
+            sendOtpForm.classList.remove('hidden');
+
+            if (identifierInput) {
+                identifierInput.focus();
+                identifierInput.select();
+            }
+        });
+    }
 });

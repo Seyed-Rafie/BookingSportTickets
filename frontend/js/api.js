@@ -50,7 +50,17 @@ async function request(endpoint, options = {}) {
 
         // اگر وضعیت HTTP در بازه 200 تا 299 نبود
         if (!response.ok) {
-            const errorMessage = data.detail || `خطای سرور (کد ${response.status})`;
+            let errorMessage = `خطای سرور (کد ${response.status})`;
+
+            if (typeof data.detail === 'string') {
+                errorMessage = data.detail;
+            } else if (Array.isArray(data.detail)) {
+                // استخراج پیام‌های خطای اعتبارسنجی (Validation Errors) در FastAPI
+                errorMessage = data.detail.map(err => err.msg || 'خطای ورودی').join(' | ');
+            } else if (data.message) {
+                errorMessage = data.message;
+            }
+
             throw new Error(errorMessage);
         }
 
@@ -63,6 +73,19 @@ async function request(endpoint, options = {}) {
 }
 
 /**
+ * کمک‌کننده برای یکسان‌سازی فرمت داده‌های OTP
+ */
+function normalizeOtpPayload(payload, secondaryParam) {
+    if (typeof payload === 'object' && payload !== null) {
+        return payload;
+    }
+    if (secondaryParam !== undefined) {
+        return { identifier: payload, code: secondaryParam };
+    }
+    return { identifier: payload };
+}
+
+/**
  * ماژول اصلی API جهت بازاستفاده در تمام فایل‌های پروژه
  */
 const API = {
@@ -70,27 +93,38 @@ const API = {
     // ۱. احراز هویت و مدیریت کاربران
     // -------------------------------------------------------------
     auth: {
-        sendOTP: (phoneNumber) => 
-            request('/auth/send-otp', { method: 'POST', body: { identifier: phoneNumber } }),
+        sendOTP: (payload) => 
+            request('/auth/send-otp', { method: 'POST', body: normalizeOtpPayload(payload) }),
 
-        verifyOTP: (phoneNumber, code) => 
-            request('/auth/verify-otp', { method: 'POST', body: { identifier: phoneNumber, code } }),
+        sendOtp: (payload) => 
+            request('/auth/send-otp', { method: 'POST', body: normalizeOtpPayload(payload) }),
+
+        verifyOTP: (payload, code) => 
+            request('/auth/verify-otp', { method: 'POST', body: normalizeOtpPayload(payload, code) }),
+
+        verifyOtp: (payload, code) => 
+            request('/auth/verify-otp', { method: 'POST', body: normalizeOtpPayload(payload, code) }),
 
         signup: (signupData) => 
             request('/auth/signup', { method: 'POST', body: signupData }),
 
         login: (credentials) => 
             request('/auth/login', { method: 'POST', body: credentials }),
-
-        getProfile: () => 
-            request('/auth/me', { method: 'GET' }),
-
-        updateProfile: (profileData) => 
-            request('/auth/profile', { method: 'PUT', body: profileData }),
     },
 
     // -------------------------------------------------------------
-    // ۲. جستجو و نمایش بلیط‌ها (متصل به Elasticsearch در بک‌اند)
+    // ۲. مدیریت پروفایل کاربر (منطبق بر users.py)
+    // -------------------------------------------------------------
+    users: {
+        getProfile: () => 
+            request('/users/me', { method: 'GET' }),
+
+        updateProfile: (profileData) => 
+            request('/users/me', { method: 'PATCH', body: profileData }),
+    },
+
+    // -------------------------------------------------------------
+    // ۳. جستجو و نمایش بلیط‌ها (متصل به Elasticsearch در بک‌اند)
     // -------------------------------------------------------------
     tickets: {
         search: (params = {}) => {
@@ -115,7 +149,7 @@ const API = {
     },
 
     // -------------------------------------------------------------
-    // ۳. رزرو، پرداخت و کنسلی
+    // ۴. رزرو، پرداخت و کنسلی
     // -------------------------------------------------------------
     reservations: {
         create: (ticketId, quantity = 1) => 
@@ -135,10 +169,26 @@ const API = {
     },
 
     // -------------------------------------------------------------
-    // ۴. پشتیبانی و گزارش‌ها
+    // ۵. پشتیبانی و گزارش‌ها
     // -------------------------------------------------------------
     reports: {
         submit: (reportData) => 
             request('/reports', { method: 'POST', body: reportData }),
+    },
+
+    // -------------------------------------------------------------
+    // ۶. پنل ادمین (منطبق بر admin.py)
+    // -------------------------------------------------------------
+    admin: {
+        getReports: (status = null) => {
+            const endpoint = status ? `/admin/reports?status=${status}` : '/admin/reports';
+            return request(endpoint, { method: 'GET' });
+        },
+
+        respondToReport: (reportId, payload) => 
+            request(`/admin/reports/${reportId}`, { method: 'PATCH', body: payload }),
+
+        updateReservationStatus: (reservationId, payload) => 
+            request(`/admin/reservations/${reservationId}`, { method: 'PATCH', body: payload }),
     }
 };
