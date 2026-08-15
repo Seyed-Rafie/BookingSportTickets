@@ -7,6 +7,7 @@ from fastapi import APIRouter, Query, HTTPException, status
 from app.schemas.ticket import TicketSummarySchema, TicketDetailSchema
 from app.core.database import execute_query
 from app.core.redis_client import get_cache, set_cache
+from app.core.elasticsearch import es_client, TICKETS_INDEX
 
 router = APIRouter(prefix="/tickets", tags=["Tickets & Matches"])
 
@@ -22,7 +23,8 @@ SPORT_BASKETBALL_ID = 3
 
 
 @router.get("/", response_model=List[TicketSummarySchema])
-def search_tickets(
+async def search_tickets(
+    q: Optional[str] = Query(None, description="عبارت جستجوی متنی (نام تیم، ورزشگاه و...)"),
     sport_type_id: Optional[int] = Query(None, description="شناسه نوع ورزش"),
     city_id: Optional[int] = Query(None, description="شناسه شهر"),
     category_id: Optional[int] = Query(None, description="شناسه دسته‌بندی بلیط"),
@@ -31,134 +33,122 @@ def search_tickets(
     date_from: Optional[datetime] = Query(None, description="از تاریخ"),
     date_to: Optional[datetime] = Query(None, description="تا تاریخ"),
 ):
-    # 1. تولید کلید کش ایمن و استاندارد
+    # ۱. تولید کلید کش Redis متناسب با تمام پارامترها (از جمله q)
     df_str = date_from.isoformat() if date_from else ""
     dt_str = date_to.isoformat() if date_to else ""
 
     cache_key = (
-        f"tickets:search:"
+        f"tickets:search:q_{q}:"
         f"s_{sport_type_id}:c_{city_id}:cat_{category_id}:"
         f"pmin_{min_price}:pmax_{max_price}:df_{df_str}:dt_{dt_str}"
     )
 
-    # 2. بررسی Redis Cache
+    # ۲. بررسی Redis Cache
     cached_data = get_cache(cache_key)
     if cached_data:
         return json.loads(cached_data)
 
-    # 3. کوئری اصلی
-    base_sql = """
-        SELECT
-            t.ticket_id,
-            t.ticket_code,
-            tc.name AS category_name,
-            t.price,
-            t.remaining_capacity,
-            t.status AS ticket_status,
+    # ۳. ساخت کوئری Elastic DSL
+    must_conditions = []
+    
+    # فیلترهای ثابت: فقط بلیط‌های موجود (available) و دارای ظرفیت
+    filter_conditions = [
+        {"term": {"ticket_status": "available"}},
+        {"range": {"remaining_capacity": {"gt": 0}}}
+    ]
 
-            m.match_id,
-            m.match_datetime,
-            m.status AS match_status,
+    # ۴. جستجوی متنی (Fuzzy Search روی عنوان، تیم‌ها و ورزشگاه)
+    if q:
+        must_conditions.append({
+            "multi_match": {
+                "query": q,
+                "fields": ["title^3", "home_team^2", "away_team^2", "venue_name"],
+                "fuzziness": "AUTO"
+            }
+        })
 
-            st.name AS sport_type_name,
-            comp.name AS competition_name,
-
-            ht.team_id AS home_team_id,
-            ht.name AS home_team_name,
-
-            at.team_id AS away_team_id,
-            at.name AS away_team_name,
-
-            v.name AS venue_name,
-            c.name AS city_name
-
-        FROM TICKETS t
-        INNER JOIN MATCHES m ON t.match_id = m.match_id
-        INNER JOIN SPORT_TYPES st ON m.sport_type_id = st.sport_type_id
-        INNER JOIN COMPETITIONS comp ON m.competition_id = comp.competition_id
-        INNER JOIN TEAMS ht ON m.home_team_id = ht.team_id
-        INNER JOIN TEAMS at ON m.away_team_id = at.team_id
-        INNER JOIN VENUES v ON m.venue_id = v.venue_id
-        INNER JOIN CITIES c ON v.city_id = c.city_id
-        INNER JOIN TICKET_CATEGORIES tc ON t.category_id = tc.category_id
-            AND tc.sport_type_id = m.sport_type_id
-
-        WHERE
-            t.status = 'available'
-            AND t.remaining_capacity > 0
-    """
-
-    # 4. شرایط فیلتر
-    conditions = []
-    params = []
-
+    # ۵. اعمال فیلترهای شناسه و مشخصات دقیق
     if sport_type_id is not None:
-        conditions.append("m.sport_type_id = %s")
-        params.append(sport_type_id)
+        filter_conditions.append({"term": {"sport_type_id": sport_type_id}})
 
     if city_id is not None:
-        conditions.append("v.city_id = %s")
-        params.append(city_id)
+        filter_conditions.append({"term": {"city_id": city_id}})
 
     if category_id is not None:
-        conditions.append("t.category_id = %s")
-        params.append(category_id)
+        filter_conditions.append({"term": {"category_id": category_id}})
 
-    if min_price is not None:
-        conditions.append("t.price >= %s")
-        params.append(min_price)
+    # ۶. فیلتر بازه قیمت
+    if min_price is not None or max_price is not None:
+        price_range = {}
+        if min_price is not None:
+            price_range["gte"] = min_price
+        if max_price is not None:
+            price_range["lte"] = max_price
+        filter_conditions.append({"range": {"price": price_range}})
 
-    if max_price is not None:
-        conditions.append("t.price <= %s")
-        params.append(max_price)
+    # ۷. فیلتر بازه تاریخ برگزاری مسابقه
+    if date_from or date_to:
+        date_range = {}
+        if date_from:
+            date_range["gte"] = date_from.isoformat()
+        if date_to:
+            date_range["lte"] = date_to.isoformat()
+        filter_conditions.append({"range": {"event_date": date_range}})
 
-    if date_from is not None:
-        conditions.append("m.match_datetime >= %s")
-        params.append(date_from)
+    # ترکیب نهایی بدنه کوئری
+    query_body = {
+        "query": {
+            "bool": {
+                "must": must_conditions if must_conditions else [{"match_all": {}}],
+                "filter": filter_conditions
+            }
+        },
+        "sort": [
+            {"event_date": {"order": "asc"}}  # مرتب‌سازی صعودی بر اساس تاریخ مسابقه
+        ]
+    }
 
-    if date_to is not None:
-        conditions.append("m.match_datetime <= %s")
-        params.append(date_to)
+    # ۸. اجرای کوئری در Elasticsearch
+    es_response = await es_client.search(
+        index=TICKETS_INDEX,
+        body=query_body,
+        size=100  # تعداد حداکثر نتایج دریافتی
+    )
 
-    if conditions:
-        base_sql += " AND " + " AND ".join(conditions)
+    hits = es_response["hits"]["hits"]
 
-    base_sql += " ORDER BY m.match_datetime ASC;"
-
-    # 5. اجرای Query
-    db_rows = execute_query(base_sql, tuple(params), fetch_all=True)
-
-    # 6. ساخت Response
+    # ۹. تبدیل سندهای دریافت شده از Elastic به ساختار پاسخ API (TicketSummarySchema)
     formatted_response = []
-    for row in db_rows:
+    for hit in hits:
+        source = hit["_source"]
         item = {
-            "ticket_id": row["ticket_id"],
-            "ticket_code": row["ticket_code"],
-            "category_name": row["category_name"],
-            "price": row["price"],  # تبدیل به float حذف شد تا Decimal/Int حفظ شود
-            "remaining_capacity": row["remaining_capacity"],
-            "status": row["ticket_status"],
+            "ticket_id": source.get("ticket_id"),
+            "ticket_code": source.get("ticket_code"),
+            "category_name": source.get("category_name", ""),
+            "price": source.get("price"),
+            "remaining_capacity": source.get("remaining_capacity"),
+            "status": source.get("ticket_status"),
             "match": {
-                "match_id": row["match_id"],
-                "competition_name": row["competition_name"],
-                "sport_type_name": row["sport_type_name"],
+                "match_id": source.get("match_id"),
+                "competition_name": source.get("competition_name") or "نامشخص",
+                "sport_type_name": source.get("sport_type", ""),
                 "home_team": {
-                    "team_id": row["home_team_id"],
-                    "name": row["home_team_name"],
+                    "team_id": source.get("home_team_id") or 0,
+                    "name": source.get("home_team", ""),
                 },
                 "away_team": {
-                    "team_id": row["away_team_id"],
-                    "name": row["away_team_name"],
+                    "team_id": source.get("away_team_id") or 0,
+                    "name": source.get("away_team", ""),
                 },
-                "venue_name": row["venue_name"],
-                "city_name": row["city_name"],
-                "match_datetime": row["match_datetime"],
-                "status": row["match_status"],
+                "venue_name": source.get("venue_name", ""),
+                "city_name": source.get("city", ""),
+                "match_datetime": source.get("event_date"),
+                "status": source.get("match_status", ""),
             },
         }
         formatted_response.append(item)
 
-    # 7. ذخیره در Redis (با default=str برای سریالایز شدن راحت datetime و decimal)
+    # ۱۰. ذخیره نتیجه در کش Redis
     set_cache(
         cache_key,
         json.dumps(formatted_response, ensure_ascii=False, default=str),

@@ -15,38 +15,29 @@ logger = logging.getLogger(__name__)
 
 # نگاشت بهینه‌شده با آنالایزر فارسی برای جستجوی دقیق‌تر
 TICKETS_INDEX_MAPPING = {
-    "settings": {
-        "analysis": {
-            "analyzer": {
-                "persian_analyzer": {
-                    "tokenizer": "standard",
-                    "filter": ["lowercase", "persian_normalization"]
-                }
-            }
-        }
-    },
     "mappings": {
         "properties": {
-            # فیلدهای عددی و شناسه
             "ticket_id": {"type": "long"},
             "ticket_code": {"type": "keyword"},
             "match_id": {"type": "long"},
             "category_id": {"type": "integer"},
+            "sport_type_id": {"type": "integer"},
+            "city_id": {"type": "integer"},
+            "home_team_id": {"type": "integer"},
+            "away_team_id": {"type": "integer"},
             "total_capacity": {"type": "integer"},
             "remaining_capacity": {"type": "integer"},
             "price": {"type": "double"},
             "ticket_status": {"type": "keyword"},
             
-            # فیلدهای متنی همراه با آنالایزر فارسی
-            "title": {"type": "text", "analyzer": "persian_analyzer"},
-            "home_team": {"type": "text", "analyzer": "persian_analyzer"},
-            "away_team": {"type": "text", "analyzer": "persian_analyzer"},
-            "venue_name": {"type": "text", "analyzer": "persian_analyzer"},
-            
-            # فیلدهای دقیق (Keyword)
+            "title": {"type": "text", "analyzer": "standard"},
+            "home_team": {"type": "text"},
+            "away_team": {"type": "text"},
             "sport_type": {"type": "keyword"},
+            "venue_name": {"type": "text"},
             "city": {"type": "keyword"},
             "category_name": {"type": "keyword"},
+            "competition_name": {"type": "keyword"},
             "event_date": {"type": "date"},
             "match_status": {"type": "keyword"}
         }
@@ -78,19 +69,20 @@ async def check_es_health() -> bool:
 
 
 async def init_es_index() -> None:
-    """ایجاد ایندکس در صورت عدم وجود هنگام راه‌اندازی سرور"""
+    """ایجاد ایندکس در صورت عدم وجود (با رفع خطاهای خاموش)"""
     try:
         exists = await es_client.indices.exists(index=TICKETS_INDEX)
         if not exists:
-            await es_client.indices.create(
+            response = await es_client.indices.create(
                 index=TICKETS_INDEX,
-                mappings=TICKETS_INDEX_MAPPING["mappings"],
-                settings=TICKETS_INDEX_MAPPING["settings"]
+                body=TICKETS_INDEX_MAPPING
             )
-            logger.info(f"[Elasticsearch] Index '{TICKETS_INDEX}' created successfully.")
+            print(f"[Elasticsearch] Index '{TICKETS_INDEX}' created: {response}")
+        else:
+            print(f"[Elasticsearch] Index '{TICKETS_INDEX}' already exists.")
     except Exception as e:
-        logger.error(f"[Elasticsearch Error] Failed to initialize index: {e}")
-
+        print(f"[Elasticsearch Critical Error] Failed to create index: {e}")
+        raise e  # انتشار خطا جهت متوقف ساختن اسکریپت در صورت عدم ساخت ایندکس
 
 def build_ticket_search_query(
     q: Optional[str] = None,
