@@ -1,113 +1,137 @@
-# backend/app/core/elasticsearch.py
-from typing import Optional, Dict, Any
-from elasticsearch import AsyncElasticsearch
-from app.core.config import settings
 import logging
+from typing import Optional, Dict, Any
+from elasticsearch import AsyncElasticsearch, NotFoundError
+from app.core.config import settings
 
 # ۱. دریافت آدرس کامل Bonsai از فایل .env
 ELASTICSEARCH_URL = settings.ELASTICSEARCH_URL
 
-# ۲. ساخت کلاینت (پایتون اتوماتیک Username و Password موجود در URL را شناسایی می‌کند)
+# ۲. ساخت کلاینت ناهمگام
 es_client = AsyncElasticsearch(ELASTICSEARCH_URL)
 
 TICKETS_INDEX = "tickets"
 
 logger = logging.getLogger(__name__)
 
-# ۲. تعریف نگاشت (Mapping) دقیق فیلدها جهت ساخت ایندکس
+# نگاشت بهینه‌شده با آنالایزر فارسی برای جستجوی دقیق‌تر
 TICKETS_INDEX_MAPPING = {
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "persian_analyzer": {
+                    "tokenizer": "standard",
+                    "filter": ["lowercase", "persian_normalization"]
+                }
+            }
+        }
+    },
     "mappings": {
         "properties": {
-            "id": {"type": "integer"},
-            "title": {"type": "text", "analyzer": "standard"},
-            "home_team": {"type": "text"},
-            "away_team": {"type": "text"},
-            "venue_name": {"type": "text"},
-            "city": {"type": "keyword"},
+            # فیلدهای عددی و شناسه
+            "ticket_id": {"type": "long"},
+            "ticket_code": {"type": "keyword"},
+            "match_id": {"type": "long"},
+            "category_id": {"type": "integer"},
+            "total_capacity": {"type": "integer"},
+            "remaining_capacity": {"type": "integer"},
+            "price": {"type": "double"},
+            "ticket_status": {"type": "keyword"},
+            
+            # فیلدهای متنی همراه با آنالایزر فارسی
+            "title": {"type": "text", "analyzer": "persian_analyzer"},
+            "home_team": {"type": "text", "analyzer": "persian_analyzer"},
+            "away_team": {"type": "text", "analyzer": "persian_analyzer"},
+            "venue_name": {"type": "text", "analyzer": "persian_analyzer"},
+            
+            # فیلدهای دقیق (Keyword)
             "sport_type": {"type": "keyword"},
-            "price": {"type": "integer"},
+            "city": {"type": "keyword"},
+            "category_name": {"type": "keyword"},
             "event_date": {"type": "date"},
-            "available_seats": {"type": "integer"},
-            "status": {"type": "keyword"}
+            "match_status": {"type": "keyword"}
         }
     }
 }
 
-async def check_es_health() -> bool:
-    """
-    بررسی سلامت اتصال به Elasticsearch و دریافت اطلاعات کلستر
-    """
-    try:
-        # بررسی زنده بودن اتصال
-        is_alive = await es_client.ping()
-        if is_alive:
-            info = await es_client.info()
-            return True
-        logger.error('error in connecting to elastic search')
-        return False
-    except Exception as e:
-        logger.error(str(e))
-        return False
-
 
 async def get_es_client() -> AsyncElasticsearch:
-    """تابع کمکی جهت دریافت کلاینت Elasticsearch در اینجکشن‌های FastAPI"""
+    """تأمین کلاینت برای FastAPI Dependency Injection"""
     return es_client
 
 
+async def close_es_client() -> None:
+    """بستن اتصال الاستیک‌سرچ هنگام Shutdown سرور"""
+    await es_client.close()
+
+
+async def check_es_health() -> bool:
+    """بررسی سلامت اتصال به Elasticsearch"""
+    try:
+        is_alive = await es_client.ping()
+        if is_alive:
+            return True
+        logger.error("Error in connecting to ElasticSearch: Ping failed")
+        return False
+    except Exception as e:
+        logger.error(f"ElasticSearch Health Check Exception: {e}")
+        return False
+
+
 async def init_es_index() -> None:
-    """
-    بررسی وجود ایندکس بلیط‌ها و ایجاد آن در صورت عدم وجود
-    (این تابع هنگام استارت خوردن FastAPI در main.py فراخوانی می‌شود)
-    """
+    """ایجاد ایندکس در صورت عدم وجود هنگام راه‌اندازی سرور"""
     try:
         exists = await es_client.indices.exists(index=TICKETS_INDEX)
         if not exists:
             await es_client.indices.create(
                 index=TICKETS_INDEX,
-                body=TICKETS_INDEX_MAPPING
+                mappings=TICKETS_INDEX_MAPPING["mappings"],
+                settings=TICKETS_INDEX_MAPPING["settings"]
             )
-            print(f"[Elasticsearch] Index '{TICKETS_INDEX}' created successfully.")
+            logger.info(f"[Elasticsearch] Index '{TICKETS_INDEX}' created successfully.")
     except Exception as e:
-        print(f"[Elasticsearch Error] Failed to initialize index: {e}")
+        logger.error(f"[Elasticsearch Error] Failed to initialize index: {e}")
 
 
 def build_ticket_search_query(
     q: Optional[str] = None,
     sport_type: Optional[str] = None,
     city: Optional[str] = None,
-    min_price: Optional[int] = None,
-    max_price: Optional[int] = None,
+    category_id: Optional[int] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    ساخت بدنه کوئری Elastic DSL بر اساس پارامترهای ورودی
-    """
+    """ساخت کوئری هوشمند Elastic DSL جهت فیلتر و جستجوی بلیط‌ها"""
     must_conditions = []
-    filter_conditions = []
+    
+    # شرایط پایه: فقط بلیط‌های فعال و دارای ظرفیت نمایش داده شوند
+    filter_conditions = [
+        {"term": {"ticket_status": "active"}},
+        {"range": {"remaining_capacity": {"gt": 0}}}
+    ]
 
-    # ۱. جستجوی متنی (Fuzzy + Multi-field Match)
-    if q:
+    # ۱. جستجوی متنی
+    if q and q.strip():
         must_conditions.append({
             "multi_match": {
-                "query": q,
+                "query": q.strip(),
                 "fields": ["title^3", "home_team^2", "away_team^2", "venue_name"],
                 "fuzziness": "AUTO"
             }
         })
 
-    # ۲. فیلترهای دقیق (Exact Matches)
-    if sport_type:
-        filter_conditions.append({"term": {"sport_type": sport_type}})
+    # ۲. فیلترهای Exact Match
+    if sport_type and sport_type.strip():
+        filter_conditions.append({"term": {"sport_type": sport_type.strip()}})
 
-    if city:
-        filter_conditions.append({"term": {"city": city}})
+    if city and city.strip():
+        filter_conditions.append({"term": {"city": city.strip()}})
 
-    # فقط نمایش بلیط‌های فعال
-    filter_conditions.append({"term": {"status": "active"}})
+    if category_id is not None:
+        filter_conditions.append({"term": {"category_id": category_id}})
 
-    # ۳. فیلتر بازه قیمت
+    # ۳. فیلتر قیمت
     if min_price is not None or max_price is not None:
         price_range = {}
         if min_price is not None:
@@ -116,17 +140,16 @@ def build_ticket_search_query(
             price_range["lte"] = max_price
         filter_conditions.append({"range": {"price": price_range}})
 
-    # ۴. فیلتر بازه تاریخ برگزاری
+    # ۴. فیلتر تاریخ مسابقه
     if start_date or end_date:
         date_range = {}
-        if start_date:
-            date_range["gte"] = start_date
-        if end_date:
-            date_range["lte"] = end_date
+        if start_date and start_date.strip():
+            date_range["gte"] = start_date.strip()
+        if end_date and end_date.strip():
+            date_range["lte"] = end_date.strip()
         filter_conditions.append({"range": {"event_date": date_range}})
 
-    # ترکیب شرایط در ساختار bool query
-    query_body = {
+    return {
         "query": {
             "bool": {
                 "must": must_conditions if must_conditions else [{"match_all": {}}],
@@ -135,4 +158,26 @@ def build_ticket_search_query(
         }
     }
 
-    return query_body
+
+async def index_ticket_doc(ticket_doc: Dict[str, Any]) -> None:
+    """ذخیره یا بروزرسانی یک بلیط در Elastic"""
+    ticket_id = ticket_doc.get("ticket_id")
+    if not ticket_id:
+        raise ValueError("ticket_doc must contain a 'ticket_id'")
+        
+    await es_client.index(
+        index=TICKETS_INDEX,
+        id=str(ticket_id),
+        document=ticket_doc
+    )
+
+
+async def delete_ticket_doc(ticket_id: int) -> None:
+    """حذف سند بلیط از Elastic"""
+    try:
+        await es_client.delete(
+            index=TICKETS_INDEX,
+            id=str(ticket_id)
+        )
+    except NotFoundError:
+        pass  # سند در الاستیک‌سرچ وجود نداشته و نیازی به کرش نیست
