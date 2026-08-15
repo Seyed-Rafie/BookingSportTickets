@@ -66,10 +66,11 @@ async function request(endpoint, options = {}) {
  * ماژول اصلی API جهت بازاستفاده در تمام فایل‌های پروژه
  */
 const API = {
-    // توابع مدیریت توکن (اضافه شد)
+    // توابع مدیریت توکن
     getToken: () => localStorage.getItem('token'),
     setToken: (token) => localStorage.setItem('token', token),
     removeToken: () => localStorage.removeItem('token'),
+
     // -------------------------------------------------------------
     // ۱. احراز هویت و مدیریت کاربران
     // -------------------------------------------------------------
@@ -83,11 +84,12 @@ const API = {
         login: (credentials) => 
             request('/auth/login', { method: 'POST', body: credentials }),
 
+        // اصلاح مسیرها به /users/profile
         getProfile: () => 
-            request('/auth/me', { method: 'GET' }),
+            request('/users/profile', { method: 'GET' }),
 
         updateProfile: (profileData) => 
-            request('/auth/profile', { method: 'PUT', body: profileData }),
+            request('/users/profile', { method: 'PUT', body: profileData }),
     },
 
     // -------------------------------------------------------------
@@ -95,7 +97,6 @@ const API = {
     // -------------------------------------------------------------
     tickets: {
         search: (params = {}) => {
-            // حذف مقادیر خالی، null و undefined از پارامترهای جستجو
             const cleanParams = {};
             Object.keys(params).forEach(key => {
                 if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
@@ -143,4 +144,5 @@ const API = {
             request('/reports', { method: 'POST', body: reportData }),
     }
 };
+
 export default API;
