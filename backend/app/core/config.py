@@ -4,6 +4,7 @@ class Settings(BaseSettings):
     #safe store .env variables
     DATABASE_URL: str
     REDIS_URL: str
+    ELASTICSEARCH_URL: str
     
     # JWT
     SECRET_KEY: str = "default_secret_key_for_dev_only"

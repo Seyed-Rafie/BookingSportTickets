@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سامانه جامع رزرو بلیط مسابقات ورزشی</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* استایل‌های اختصاصی صفحه اصلی (می‌تواند به style.css هم منتقل شود) */
+        .hero { background: var(--primary-color); color: white; padding: 3rem 1rem; text-align: center; margin-bottom: 2rem; }
+        .hero h1 { font-size: 2rem; margin-bottom: 1rem; }
+        .search-box { background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: -2rem; display: flex; flex-wrap: wrap; gap: 1rem; }
+        .search-box .form-group { flex: 1; min-width: 200px; margin-bottom: 0; }
+        .tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; padding: 2rem 0; }
+        .ticket-card { background: white; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.5rem; transition: transform 0.2s; }
+        .ticket-card:hover { transform: translateY(-5px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .ticket-card h3 { color: var(--primary-color); margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        .ticket-card p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .ticket-actions { margin-top: 1rem; text-align: left; }
+        .header-nav { display: flex; justify-content: space-between; padding: 1rem; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-nav a { text-decoration: none; color: var(--text-dark); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- نویگیشن هدر -->
+    <header class="header-nav">
+        <div class="logo">🎟️ اسپورت‌تیکت</div>
+        <nav>
+            <a href="profile.html" id="profile-link">پنل کاربری</a>
+        </nav>
+    </header>
+
+    <!-- بخش Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1>هیجان مسابقات ورزشی را از نزدیک لمس کنید!</h1>
+            <p>خرید آسان و سریع بلیط مسابقات فوتبال، والیبال و بسکتبال</p>
+        </div>
+    </section>
+
+    <main class="container">
+        <!-- فرم جستجو و فیلتر -->
+        <form id="search-form" class="search-box">
+            <div class="form-group">
+                <input type="text" id="query" class="form-control" placeholder="جستجوی تیم، ورزشگاه و...">
+            </div>
+            <div class="form-group">
+                <select id="sport-type" class="form-control">
+                    <option value="">همه ورزش‌ها</option>
+                    <option value="فوتبال">فوتبال</option>
+                    <option value="والیبال">والیبال</option>
+                    <option value="بسکتبال">بسکتبال</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <select id="city" class="form-control">
+                    <option value="">همه شهرها</option>
+                    <option value="تهران">تهران</option>
+                    <option value="اصفهان">اصفهان</option>
+                    <option value="تبریز">تبریز</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary" style="width: 100%; height: 100%;">جستجو</button>
+            </div>
+        </form>
+
+        <!-- گرید نمایش نتایج -->
+        <div id="tickets-container" class="tickets-grid">
+            <!-- کارت‌های بلیط اینجا توسط جاوااسکریپت اضافه می‌شوند -->
+        </div>
+    </main>
+
+    <!-- مدال (پاپ‌آپ) جزئیات بلیط -->
+    <div id="ticket-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title" style="margin-bottom: 1rem; color: var(--primary-color);">جزئیات مسابقه</h2>
+            <div id="modal-body" style="margin-bottom: 1.5rem; line-height: 1.8;">
+                <!-- جزئیات به صورت داینامیک لود می‌شود -->
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="close-modal" class="btn" style="background: var(--secondary-color);">بستن</button>
+                <button id="reserve-btn" class="btn btn-primary">ثبت رزرو موقت (۱۰ دقیقه)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- اسکریپت اصلی صفحه -->
+    <script type="module" src="js/search.js"></script>
+</body>
+</html>

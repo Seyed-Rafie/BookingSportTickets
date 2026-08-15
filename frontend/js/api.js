@@ -33,8 +33,8 @@ async function request(endpoint, options = {}) {
     };
 
     // تبدیل اتوماتیک بدنه درخواست به فرمت JSON
-    if (rawBody && typeof rawBody === 'object') {
-        config.body = JSON.stringify(rawBody);
+    if (rawBody) {
+        config.body = typeof rawBody === 'object' ? JSON.stringify(rawBody) : rawBody;
     }
 
     try {
@@ -89,6 +89,11 @@ function normalizeOtpPayload(payload, secondaryParam) {
  * ماژول اصلی API جهت بازاستفاده در تمام فایل‌های پروژه
  */
 const API = {
+    // توابع مدیریت توکن
+    getToken: () => localStorage.getItem('token'),
+    setToken: (token) => localStorage.setItem('token', token),
+    removeToken: () => localStorage.removeItem('token'),
+
     // -------------------------------------------------------------
     // ۱. احراز هویت و مدیریت کاربران
     // -------------------------------------------------------------
@@ -110,6 +115,13 @@ const API = {
 
         login: (credentials) => 
             request('/auth/login', { method: 'POST', body: credentials }),
+
+        // تغییر مسیرها دقیقاً مطابق با Swagger
+        getProfile: () => 
+            request('/users/me', { method: 'GET' }), // تغییر یافت
+
+        updateProfile: (profileData) => 
+            request('/users/me', { method: 'PATCH', body: profileData }), // تغییر یافت به PATCH و /users/me
     },
 
     // -------------------------------------------------------------
@@ -128,7 +140,6 @@ const API = {
     // -------------------------------------------------------------
     tickets: {
         search: (params = {}) => {
-            // حذف مقادیر خالی، null و undefined از پارامترهای جستجو
             const cleanParams = {};
             Object.keys(params).forEach(key => {
                 if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
@@ -192,3 +203,6 @@ const API = {
             request(`/admin/reservations/${reservationId}`, { method: 'PATCH', body: payload }),
     }
 };
+
+// export default API;
+window.API = API
