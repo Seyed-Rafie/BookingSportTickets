@@ -1,5 +1,5 @@
 // if it deployed on a server, this must change
-const BASE_URL = 'http://127.0.0.1:8000';
+const BASE_URL = 'http://127.0.0.1:8001';
 
 /**
  * ساخت هدرهای سفارشی به همراه توکن JWT (در صورت وجود در localStorage)
@@ -66,24 +66,28 @@ async function request(endpoint, options = {}) {
  * ماژول اصلی API جهت بازاستفاده در تمام فایل‌های پروژه
  */
 const API = {
+    // توابع مدیریت توکن (اضافه شد)
+    getToken: () => localStorage.getItem('token'),
+    setToken: (token) => localStorage.setItem('token', token),
+    removeToken: () => localStorage.removeItem('token'),
     // -------------------------------------------------------------
     // ۱. احراز هویت و مدیریت کاربران
     // -------------------------------------------------------------
     auth: {
-        sendOTP: (identifier) => 
-            request('/auth/send-otp', { method: 'POST', body: { identifier: identifier } }),
+        sendOTP: (phoneNumber) => 
+            request('/auth/send-otp', { method: 'POST', body: { identifier: phoneNumber } }),
 
-        verifyOTP: (identifier, code) => 
-            request('/auth/verify-otp', { method: 'POST', body: { identifier, code } }),
+        verifyOTP: (phoneNumber, code) => 
+            request('/auth/verify-otp', { method: 'POST', body: { identifier: phoneNumber, code } }),
 
-        // login: (credentials) => 
-        //     request('/auth/login', { method: 'POST', body: credentials }),
+        login: (credentials) => 
+            request('/auth/login', { method: 'POST', body: credentials }),
 
         getProfile: () => 
-            request('/users/me', { method: 'GET' }),
+            request('/auth/me', { method: 'GET' }),
 
         updateProfile: (profileData) => 
-            request('/users/me', { method: 'PATCH', body: profileData }),
+            request('/auth/profile', { method: 'PUT', body: profileData }),
     },
 
     // -------------------------------------------------------------
@@ -139,3 +143,4 @@ const API = {
             request('/reports', { method: 'POST', body: reportData }),
     }
 };
+export default API;
