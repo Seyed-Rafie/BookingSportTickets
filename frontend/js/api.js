@@ -33,8 +33,8 @@ async function request(endpoint, options = {}) {
     };
 
     // تبدیل اتوماتیک بدنه درخواست به فرمت JSON
-    if (rawBody && typeof rawBody === 'object') {
-        config.body = JSON.stringify(rawBody);
+    if (rawBody) {
+        config.body = typeof rawBody === 'object' ? JSON.stringify(rawBody) : rawBody;
     }
 
     try {
@@ -70,20 +70,20 @@ const API = {
     // ۱. احراز هویت و مدیریت کاربران
     // -------------------------------------------------------------
     auth: {
-        sendOTP: (phoneNumber) => 
-            request('/auth/send-otp', { method: 'POST', body: { identifier: phoneNumber } }),
+        sendOTP: (identifier) => 
+            request('/auth/send-otp', { method: 'POST', body: { identifier: identifier } }),
 
-        verifyOTP: (phoneNumber, code) => 
-            request('/auth/verify-otp', { method: 'POST', body: { identifier: phoneNumber, code } }),
+        verifyOTP: (identifier, code) => 
+            request('/auth/verify-otp', { method: 'POST', body: { identifier, code } }),
 
-        login: (credentials) => 
-            request('/auth/login', { method: 'POST', body: credentials }),
+        // login: (credentials) => 
+        //     request('/auth/login', { method: 'POST', body: credentials }),
 
         getProfile: () => 
-            request('/auth/me', { method: 'GET' }),
+            request('/users/me', { method: 'GET' }),
 
         updateProfile: (profileData) => 
-            request('/auth/profile', { method: 'PUT', body: profileData }),
+            request('/users/me', { method: 'PATCH', body: profileData }),
     },
 
     // -------------------------------------------------------------
