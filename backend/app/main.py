@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware  # <-- این خط ایمپورت اضافه شد
 
 from app.core.database import check_db_health
 from app.core.redis_client import check_redis_health
@@ -21,6 +22,17 @@ app = FastAPI(
     title="Sports Ticketing System API",
     description="Booking sports tickets platform API with FastAPI, PostgreSQL, and Redis",
     version="1.0.0"
+)
+
+# ------------------------------------------------------------
+# فعال‌سازی CORS برای ارتباط فرانت‌اند (این بخش مهم اضافه شد)
+# ------------------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ------------------------------------------------------------
