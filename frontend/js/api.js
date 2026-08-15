@@ -76,6 +76,9 @@ const API = {
         verifyOTP: (phoneNumber, code) => 
             request('/auth/verify-otp', { method: 'POST', body: { identifier: phoneNumber, code } }),
 
+        signup: (signupData) => 
+            request('/auth/signup', { method: 'POST', body: signupData }),
+
         login: (credentials) => 
             request('/auth/login', { method: 'POST', body: credentials }),
 

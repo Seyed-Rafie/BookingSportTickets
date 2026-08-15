@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware  # ۱. اضافه شدن اینپورت CORS
 
 from app.core.database import check_db_health
 from app.core.redis_client import check_redis_health
@@ -14,12 +15,23 @@ from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.reports import router as reports_router
 from app.routers.admin import router as admin_router
-from app.routers import reservations  # ۱. این خط را برای اضافه کردن روتر خودت اضافه کن
+from app.routers import reservations
 
 app = FastAPI(
     title="Sports Ticketing System API",
     description="Booking sports tickets platform API with FastAPI, PostgreSQL, and Redis",
     version="1.0.0"
+)
+
+# ------------------------------------------------------------
+# ۲. تنظیمات CORS Middleware برای اجازه به مرورگر (Preflight / OPTIONS)
+# ------------------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # در محیط توسعه به تمام Originها اجازه داده می‌شود
+    allow_credentials=True,
+    allow_methods=["*"],  # اجازه به تمامی متدها (POST, GET, OPTIONS, PUT, DELETE)
+    allow_headers=["*"],  # اجازه به تمامی هدرها (Content-Type, Authorization, ...)
 )
 
 # ------------------------------------------------------------
@@ -32,8 +44,6 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(reports_router)
 app.include_router(admin_router)
-
-# ۲. این خط را اضافه کن تا APIهای رزرو و پرداخت به برنامه متصل شوند
 app.include_router(reservations.router)
 
 
@@ -52,7 +62,7 @@ def read_root():
 def health_check():
     # بررسی سلامت دیتابیس و ردیس
     db_healthy = check_db_health()
-    redis_healthy = check_redis_health() # اصلاح یک اشتباه تایپی کوچک در کد قبلی شما
+    redis_healthy = check_redis_health()
 
     is_all_healthy = db_healthy and redis_healthy
 

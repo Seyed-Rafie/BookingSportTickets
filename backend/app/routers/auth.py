@@ -7,7 +7,7 @@ from app.schemas.auth import (
 from app.core.redis_client import redis_client
 from app.core.config import settings
 from app.core.database import execute_query
-from app.core.security import create_access_token, hash_password, create_access_token
+from app.core.security import create_access_token, hash_password
 from app.utils.otp import generate_otp_code, send_otp_notification
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
