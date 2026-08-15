@@ -83,12 +83,13 @@ const API = {
 
         login: (credentials) => 
             request('/auth/login', { method: 'POST', body: credentials }),
-        
+
+        // تغییر مسیرها دقیقاً مطابق با Swagger
         getProfile: () => 
-            request('/auth/me', { method: 'GET' }),
+            request('/users/me', { method: 'GET' }), // تغییر یافت
 
         updateProfile: (profileData) => 
-            request('/auth/me', { method: 'PUT', body: profileData }),
+            request('/users/me', { method: 'PATCH', body: profileData }), // تغییر یافت به PATCH و /users/me
     },
 
     // -------------------------------------------------------------
