@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل کاربری | اسپورت‌تیکت</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* استایل‌های اختصاصی پروفایل */
+        .profile-container { display: flex; flex-wrap: wrap; gap: 2rem; padding: 2rem 0; }
+        .sidebar { flex: 1; min-width: 300px; background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: fit-content; }
+        .main-content { flex: 2; min-width: 300px; }
+        .reservation-card { background: white; border-right: 4px solid var(--primary-color); padding: 1.5rem; margin-bottom: 1rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.85rem; font-weight: bold; }
+        .status-paid { background: #d1fae5; color: var(--success); border-right-color: var(--success); }
+        .status-reserved { background: #fef3c7; color: var(--warning); border-right-color: var(--warning); }
+        .status-cancelled { background: #fee2e2; color: var(--danger); border-right-color: var(--danger); }
+        .action-buttons { margin-top: 1rem; display: flex; gap: 0.5rem; }
+    </style>
+</head>
+<body>
+
+    <header class="header-nav">
+        <div class="logo">🎟️ پنل کاربری</div>
+        <nav>
+            <a href="index.html">بازگشت به خانه</a>
+            <a href="#" id="logout-btn" style="color: var(--danger); margin-right: 1rem;">خروج</a>
+        </nav>
+    </header>
+
+    <main class="container profile-container">
+        
+        <!-- بخش سایدبار: فرم ویرایش اطلاعات -->
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">اطلاعات من</h2>
+            <form id="profile-form">
+                <div class="form-group">
+                    <label>نام و نام خانوادگی</label>
+                    <input type="text" id="user-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>شماره تماس</label>
+                    <input type="text" id="user-phone" class="form-control" disabled style="background: var(--bg-light);">
+                </div>
+                <div class="form-group">
+                    <label>ایمیل</label>
+                    <input type="email" id="user-email" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>شهر سکونت</label>
+                    <input type="text" id="user-city" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">ثبت تغییرات</button>
+                <p id="profile-msg" style="margin-top: 1rem; font-size: 0.9rem; display: none;"></p>
+            </form>
+        </aside>
+
+        <!-- بخش اصلی: تاریخچه خریدها -->
+        <section class="main-content">
+            <h2 style="margin-bottom: 1.5rem;">تاریخچه بلیط‌ها و رزروهای من</h2>
+            <div id="reservations-container">
+                <p>در حال بارگذاری رزروها...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- مدال کنسلی و جریمه -->
+    <div id="cancel-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="color: var(--danger); margin-bottom: 1rem;">تایید کنسلی بلیط</h2>
+            <div id="cancel-details" style="margin-bottom: 1.5rem; line-height: 1.8;">
+                <!-- جریمه اینجا لود می‌شود -->
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button class="btn close-modal" style="background: var(--secondary-color);">انصراف</button>
+                <button id="confirm-cancel-btn" class="btn btn-danger">کنسل کن و مبلغ را برگردان</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مدال ثبت گزارش مشکل -->
+    <div id="report-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="color: var(--warning); margin-bottom: 1rem;">ثبت گزارش مشکل</h2>
+            <form id="report-form">
+                <div class="form-group">
+                    <label>دسته بندی مشکل</label>
+                    <select id="report-category" class="form-control" required>
+                        <option value="مشکل در پرداخت">مشکل در پرداخت</option>
+                        <option value="مشکل در جایگاه">مشکل در جایگاه</option>
+                        <option value="تغییر زمان مسابقه">تغییر زمان مسابقه</option>
+                        <option value="سایر موارد">سایر موارد</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>توضیحات</label>
+                    <textarea id="report-description" class="form-control" rows="4" required placeholder="لطفاً مشکل خود را کامل توضیح دهید..."></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn close-modal" style="background: var(--secondary-color);">انصراف</button>
+                    <button type="submit" class="btn btn-primary" style="background: var(--warning);">ارسال گزارش</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="js/profile.js"></script>
+</body>
+</html>
