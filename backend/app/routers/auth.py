@@ -2,12 +2,13 @@ from fastapi import APIRouter, HTTPException, status
 from app.schemas.auth import (
     SendOTPRequest, SendOTPResponse,
     VerifyOTPRequest, VerifyOTPResponse, UserData,
-    SignupRequest, SignupResponse
+    SignupRequest, SignupResponse,
+    LoginRequest, LoginResponse
 )
 from app.core.redis_client import redis_client
 from app.core.config import settings
 from app.core.database import execute_query
-from app.core.security import create_access_token, hash_password, create_access_token
+from app.core.security import create_access_token, hash_password, create_access_token, verify_password
 from app.utils.otp import generate_otp_code, send_otp_notification
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -109,6 +110,63 @@ def verify_otp(request: VerifyOTPRequest):
     return VerifyOTPResponse(
         message="Login successful.",
         is_new_user=False,
+        access_token=access_token,
+        token_type="bearer",
+        user=UserData(
+            user_id=user_row["user_id"],
+            first_name=user_row.get("first_name"),
+            last_name=user_row.get("last_name"),
+            email=user_row.get("email"),
+            phone=user_row.get("phone"),
+            role_id=user_row["role_id"],
+            status=user_row["status"]
+        )
+    )
+
+@router.post("/login", response_model=LoginResponse)
+def login(request: LoginRequest):
+
+    identifier = request.identifier.strip().lower() 
+    entered_password = request.password.strip()
+
+    sql_query = """
+            SELECT user_id, first_name, last_name, email, phone, role_id, status, password_hash
+            FROM users 
+            WHERE email = %s OR phone = %s
+            LIMIT 1;
+        """
+    
+    user_row = execute_query(sql_query,params=(identifier, identifier), fetch_one=True)
+
+    # If user record does not exist in DB, signal that registration is required
+    if not user_row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="username isn't exsist."
+        )
+
+    if not verify_password(entered_password, user_row['password_hash']):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="password is incorrect"
+        )
+
+    # Verify if user account is enabled
+    if user_row.get("status", "active") == "deactive":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is deactivated."
+        )
+
+    # Issue JWT token for existing user
+    token_payload = {
+        "sub": str(user_row["user_id"]),
+        "role": user_row["role_id"]
+    }
+    access_token = create_access_token(token_payload)
+
+    return LoginResponse(
+        message="Login successful.",
         access_token=access_token,
         token_type="bearer",
         user=UserData(

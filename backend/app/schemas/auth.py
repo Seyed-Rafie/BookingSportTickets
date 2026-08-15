@@ -29,6 +29,17 @@ class VerifyOTPResponse(BaseModel):
     token_type: Optional[str] = "bearer"
     user: Optional[UserData] = None
 
+
+class LoginRequest(BaseModel):
+    identifier: str = Field(..., description="User email or phone number", example="09120000001 or abc@example.com")
+    password: str = Field(..., description="user password", examples="123abc")
+
+class LoginResponse(BaseModel):
+    message: str
+    access_token: Optional[str] = None
+    token_type: Optional[str] = "bearer"
+    user: Optional[UserData] = None
+
 class SignupRequest(BaseModel):
     first_name: str = Field(..., min_length=2, example="Ali")
     last_name: str = Field(..., min_length=2, example="Rezaei")
