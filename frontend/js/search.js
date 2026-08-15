@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadTickets(filters = {}) {
         ticketsContainer.innerHTML = '<p style="text-align:center; width:100%;">در حال جستجوی مسابقات...</p>';
         try {
-            // استفاده از API.tickets.search که شما نوشتید
             const tickets = await API.tickets.search(filters);
             
             if (!tickets || tickets.length === 0) {
@@ -27,11 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
             tickets.forEach(ticket => {
                 const card = document.createElement('div');
                 card.className = 'ticket-card';
+                // اصلاح مسیر متغیرها بر اساس ساختار JSON بک‌اند
                 card.innerHTML = `
-                    <h3>${ticket.home_team} - ${ticket.away_team}</h3>
-                    <p><strong>ورزش:</strong> ${ticket.sport_type}</p>
-                    <p><strong>ورزشگاه:</strong> ${ticket.venue_name} (${ticket.city || 'نامشخص'})</p>
-                    <p><strong>تاریخ:</strong> ${new Date(ticket.match_datetime).toLocaleString('fa-IR')}</p>
+                    <h3>${ticket.match.home_team.name} - ${ticket.match.away_team.name}</h3>
+                    <p><strong>ورزش:</strong> ${ticket.match.sport_type_name}</p>
+                    <p><strong>ورزشگاه:</strong> ${ticket.match.venue_name} (${ticket.match.city_name || 'نامشخص'})</p>
+                    <p><strong>تاریخ:</strong> ${new Date(ticket.match.match_datetime).toLocaleString('fa-IR')}</p>
                     <p><strong>شروع قیمت از:</strong> ${Number(ticket.price).toLocaleString('fa-IR')} تومان</p>
                     <div class="ticket-actions">
                         <button class="btn btn-primary view-details-btn" data-id="${ticket.ticket_id}">مشاهده و رزرو</button>
@@ -53,10 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        // اصلاح کلیدهای فیلتر دقیقاً مطابق با پارامترهای Swagger
         const filters = {
-            query: document.getElementById('query').value,
-            sport_type: document.getElementById('sport-type').value,
-            city: document.getElementById('city').value
+            q: document.getElementById('query').value,
+            sport_type_id: document.getElementById('sport-type').value,
+            city_id: document.getElementById('city').value
         };
         loadTickets(filters);
     });
@@ -68,14 +69,14 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSelectedTicketId = ticketId;
 
         try {
-            // استفاده از API.tickets.getDetails که شما نوشتید
             const ticketDetail = await API.tickets.getDetails(ticketId);
             
-            modalTitle.innerText = `${ticketDetail.home_team} - ${ticketDetail.away_team}`;
+            // اصلاح مسیر متغیرها برای مُدال رزرو
+            modalTitle.innerText = `${ticketDetail.match.home_team.name} - ${ticketDetail.match.away_team.name}`;
             modalBody.innerHTML = `
-                <p><strong>ورزش:</strong> ${ticketDetail.sport_type}</p>
-                <p><strong>ورزشگاه:</strong> ${ticketDetail.venue_name}</p>
-                <p><strong>زمان:</strong> ${new Date(ticketDetail.match_datetime).toLocaleString('fa-IR')}</p>
+                <p><strong>ورزش:</strong> ${ticketDetail.match.sport_type_name}</p>
+                <p><strong>ورزشگاه:</strong> ${ticketDetail.match.venue_name}</p>
+                <p><strong>زمان:</strong> ${new Date(ticketDetail.match.match_datetime).toLocaleString('fa-IR')}</p>
                 <p><strong>قیمت:</strong> ${Number(ticketDetail.price).toLocaleString('fa-IR')} تومان</p>
                 <p><strong>ظرفیت باقیمانده:</strong> ${ticketDetail.remaining_capacity} صندلی</p>
             `;
@@ -93,13 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
     reserveBtn.addEventListener('click', () => {
         if (!API.getToken()) {
             alert('برای رزرو بلیط ابتدا باید وارد سایت شوید.');
-            // در صورت نیاز ریدایرکت کنید
-            // window.location.href = 'login.html'; 
             return;
         }
         alert(`هدایت به فرآیند انتخاب صندلی برای بلیط شماره ${currentSelectedTicketId}`);
     });
 
-    // لود اولیه
+    // لود اولیه مسابقات
     loadTickets();
 });

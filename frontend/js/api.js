@@ -148,9 +148,17 @@ const API = {
             });
 
             const queryString = new URLSearchParams(cleanParams).toString();
-            const endpoint = queryString ? `/tickets/search?${queryString}` : '/tickets/search';
+            // کلمه search از آدرس‌های زیر حذف شد تا با بک‌اند هماهنگ شود
+            const endpoint = queryString ? `/tickets/?${queryString}` : '/tickets/';
             return request(endpoint, { method: 'GET' });
         },
+
+        getDetails: (ticketId) => 
+            request(`/tickets/${ticketId}`, { method: 'GET' }),
+
+        getVenues: () => 
+            request('/venues', { method: 'GET' }),
+    },
 
         getDetails: (ticketId) => 
             request(`/tickets/${ticketId}`, { method: 'GET' }),
