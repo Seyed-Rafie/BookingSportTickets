@@ -29,6 +29,11 @@ class TicketSummarySchema(BaseModel):
     status: str
     match: MatchSchema
 
+class CreateTicketRequest(BaseModel):
+    match_id: int
+    category_id: int
+    total_capacity: int
+    price: int
 
 class FootballDetailsSchema(BaseModel):
     gate_number: Optional[str] = None

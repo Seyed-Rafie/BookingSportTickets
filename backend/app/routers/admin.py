@@ -1,8 +1,12 @@
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional, List
 from app.schemas.admin import ReportResponseUpdate, ReservationStatusUpdate, AdminReportResponse
+from app.schemas.ticket import TicketSummarySchema, CreateTicketRequest, MatchSchema
 from app.core.dependencies import get_current_support_user
 from app.core.database import execute_query
+from app.core.dependencies import get_current_admin_user
+from app.core.elasticsearch import fetch_enriched_ticket, sync_ticket_to_es
 
 router = APIRouter(prefix="/admin", tags=["Admin & Support Panel"])
 
@@ -127,3 +131,65 @@ def update_reservation_status(
         "message": f"Reservation status updated to '{new_status}' successfully.",
         "reservation": updated_reservation
     }
+
+@router.post("/ticket", response_model=TicketSummarySchema, status_code=status.HTTP_201_CREATED)
+async def create_ticket(
+    request: CreateTicketRequest, 
+    admin_user: dict = Depends(get_current_admin_user)
+):
+    # ۱. تولید کد یکتای بلیط
+    ticket_code = f"TKN-{uuid.uuid4().hex[:8].upper()}"
+
+    # ۲. درج در دیتابیس (مقدار اولیه remaining_capacity برابر با total_capacity است)
+    insert_query = """
+        INSERT INTO tickets (match_id, category_id, total_capacity, price, ticket_code)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING ticket_id;
+    """
+    
+    result = execute_query(
+        insert_query, 
+        (
+            request.match_id, 
+            request.category_id, 
+            request.total_capacity, 
+            request.price, 
+            ticket_code
+        ), 
+        fetch_one=True,
+        commit=True
+    )
+
+    if not result:
+        raise HTTPException(status_code=400, detail="خطا در ثبت بلیط")
+
+    ticket_id = result["ticket_id"]
+
+    # ۳. همگام‌سازی لحظه‌ای با Elasticsearch
+    await sync_ticket_to_es(ticket_id)
+
+    # ۴. دریافت داده غنی‌شده (همراه با اطلاعات کامل مسابقه و دسته‌بندی برای MatchSchema)
+    enriched_data = await fetch_enriched_ticket(ticket_id)
+    if not enriched_data:
+        raise HTTPException(status_code=404, detail="اطلاعات بلیط ثبت‌شده یافت نشد")
+
+    # ۵. ساخت خروجی منطبق با TicketSummarySchema
+    return TicketSummarySchema(
+        ticket_id=enriched_data["ticket_id"],
+        ticket_code=enriched_data["ticket_code"],
+        category_name=enriched_data["category_name"],
+        price=float(enriched_data["price"]),
+        remaining_capacity=enriched_data["remaining_capacity"],
+        status=enriched_data["ticket_status"],
+        match={
+            "match_id": enriched_data["match_id"],
+            "competition_name": enriched_data.get("competition_name", ""),
+            "sport_type_name": enriched_data.get("sport_type", ""),
+            "home_team": {"team_id": enriched_data.get("home_team_id", 0), "name": enriched_data.get("home_team", "")},
+            "away_team": {"team_id": enriched_data.get("away_team_id", 0), "name": enriched_data.get("away_team", "")},
+            "venue_name": enriched_data.get("venue_name", ""),
+            "city_name": enriched_data.get("city", ""),
+            "match_datetime": enriched_data.get("event_date"),
+            "status": enriched_data.get("match_status", "")
+        }
+    )   

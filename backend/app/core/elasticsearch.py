@@ -2,6 +2,7 @@ import logging
 from typing import Optional, Dict, Any
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from app.core.config import settings
+from app.core.database import execute_query
 
 # ۱. دریافت آدرس کامل Bonsai از فایل .env
 ELASTICSEARCH_URL = settings.ELASTICSEARCH_URL
@@ -160,7 +161,7 @@ async def index_ticket_doc(ticket_doc: Dict[str, Any]) -> None:
     await es_client.index(
         index=TICKETS_INDEX,
         id=str(ticket_id),
-        document=ticket_doc
+        body=ticket_doc
     )
 
 
@@ -173,3 +174,100 @@ async def delete_ticket_doc(ticket_id: int) -> None:
         )
     except NotFoundError:
         pass  # سند در الاستیک‌سرچ وجود نداشته و نیازی به کرش نیست
+
+async def fetch_enriched_ticket(ticket_id: int) -> Optional[Dict[str, Any]]:
+    """استخراج داده جامع بلیط همراه با جزئیات ورزشی و جداول پایه طبق ERD"""
+    query = """
+        SELECT 
+            t.ticket_id,
+            t.ticket_code,
+            t.match_id,
+            t.category_id,
+            t.total_capacity,
+            t.remaining_capacity,
+            t.price,
+            t.status AS ticket_status,
+            m.match_datetime AS event_date,
+            m.status AS match_status,
+            m.sport_type_id,
+            m.home_team_id,
+            m.away_team_id,
+            v.city_id,
+            v.name AS venue_name,
+            tc.name AS category_name,
+            st.name AS sport_type,
+            ci.name AS city,
+            ht.name AS home_team,
+            at.name AS away_team,
+            comp.name AS competition_name,
+            CONCAT(COALESCE(ht.name, ''), ' - ', COALESCE(at.name, '')) AS title,
+            -- Football Details
+            fd.gate_number AS fb_gate_number,
+            fd.has_parking AS fb_has_parking,
+            fd.vip_services AS fb_vip_services,
+            -- Basketball Details
+            bd.entrance_gate AS bb_entrance_gate,
+            bd.vip_services AS bb_vip_services,
+            bd.has_food_court AS bb_has_food_court,
+            -- Volleyball Details
+            vd.entrance_gate AS vb_entrance_gate,
+            vd.special_services AS vb_special_services
+        FROM TICKETS t
+        JOIN MATCHES m ON t.match_id = m.match_id
+        JOIN VENUES v ON m.venue_id = v.venue_id
+        JOIN TICKET_CATEGORIES tc ON t.category_id = tc.category_id
+        LEFT JOIN TEAMS ht ON m.home_team_id = ht.team_id
+        LEFT JOIN TEAMS at ON m.away_team_id = at.team_id
+        LEFT JOIN SPORT_TYPES st ON m.sport_type_id = st.sport_type_id
+        LEFT JOIN CITIES ci ON v.city_id = ci.city_id
+        LEFT JOIN COMPETITIONS comp ON m.competition_id = comp.competition_id
+        LEFT JOIN FOOTBALL_DETAILS fd ON t.ticket_id = fd.ticket_id
+        LEFT JOIN BASKETBALL_DETAILS bd ON t.ticket_id = bd.ticket_id
+        LEFT JOIN VOLLEYBALL_DETAILS vd ON t.ticket_id = vd.ticket_id
+        WHERE t.ticket_id = %s;
+    """
+    records = execute_query(query, (ticket_id,), fetch_all=True)
+    return records[0] if records else None
+
+async def sync_ticket_to_es(ticket_id: int) -> None:
+    """خواندن داده جدید از PostgreSQL و ارسال Upsert به Elastic"""
+    try:
+        record = await fetch_enriched_ticket(ticket_id)
+        if not record:
+            await delete_ticket_doc(ticket_id)
+            return
+
+        doc = {
+            "ticket_id": record["ticket_id"],
+            "ticket_code": record["ticket_code"],
+            "match_id": record["match_id"],
+            "category_id": record["category_id"],
+            "sport_type_id": record["sport_type_id"],
+            "city_id": record["city_id"],
+            "home_team_id": record["home_team_id"] or 0,
+            "away_team_id": record["away_team_id"] or 0,
+            "total_capacity": record["total_capacity"],
+            "remaining_capacity": record["remaining_capacity"],
+            "price": float(record["price"]),
+            "ticket_status": record["ticket_status"],
+            "title": record["title"],
+            "home_team": record["home_team"] or "",
+            "away_team": record["away_team"] or "",
+            "sport_type": record["sport_type"] or "",
+            "venue_name": record["venue_name"] or "",
+            "city": record["city"] or "",
+            "category_name": record["category_name"] or "",
+            "competition_name": record["competition_name"] or "",
+            "event_date": record["event_date"].isoformat() if record.get("event_date") else None,
+            "match_status": record["match_status"] or "",
+            # ساختار جزئیات ورزشی درون سند Elastic
+            "details": {
+                "gate_number": record.get("fb_gate_number") or record.get("bb_entrance_gate") or record.get("vb_entrance_gate"),
+                "has_parking": record.get("fb_has_parking"),
+                "has_food_court": record.get("bb_has_food_court"),
+                "vip_services": record.get("fb_vip_services") or record.get("bb_vip_services") or record.get("vb_special_services")
+            }
+        }
+        await index_ticket_doc(doc)
+    except Exception as e:
+        logger.error(f"خطا در همگام‌سازی بلیط {ticket_id} با Elasticsearch: {e}")

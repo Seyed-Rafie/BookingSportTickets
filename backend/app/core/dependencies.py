@@ -65,3 +65,15 @@ def get_current_support_user(current_user: dict = Depends(get_current_user)) -> 
             detail="Access denied. Support or Admin privileges required."
         )
     return current_user
+
+def get_current_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
+    """
+    Ensure current authenticated user has Admin (1)
+    """
+    allowed_roles = [1]  # 1: Admin
+    if current_user.get("role_id") not in allowed_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Support or Admin privileges required."
+        )
+    return current_user
