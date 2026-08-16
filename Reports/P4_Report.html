@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گزارش فنی فاز چهارم - سیستم رزرو بلیط مسابقات ورزشی</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 12mm 10mm;
+            @bottom-center {
+                content: "صفحه " counter(page) " از " counter(pages);
+                font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Vazirmatn', 'Tahoma', 'Segoe UI', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+            font-size: 9.5pt;
+            direction: rtl;
+        }
+
+        /* Header / Banner */
+        .header-banner {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #2563eb 100%);
+            color: #ffffff;
+            padding: 20px 24px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-banner h1 {
+            font-size: 18pt;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: #ffffff;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 6px;
+        }
+
+        .header-banner p {
+            font-size: 10pt;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+
+        .meta-grid {
+            display: table;
+            width: 100%;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 6px;
+            padding: 8px 12px;
+        }
+
+        .meta-row {
+            display: table-row;
+        }
+
+        .meta-cell {
+            display: table-cell;
+            padding: 4px 8px;
+            font-size: 8.5pt;
+            color: #e2e8f0;
+        }
+
+        .meta-cell strong {
+            color: #60a5fa;
+        }
+
+        /* Section Styling */
+        .section {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 13pt;
+            font-weight: 700;
+            color: #0f172a;
+            border-right: 4px solid #2563eb;
+            padding-right: 10px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .subsection-title {
+            font-size: 11pt;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-top: 12px;
+            margin-bottom: 8px;
+        }
+
+        p {
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+
+        li {
+            margin-bottom: 4px;
+        }
+
+        /* Highlights & Callouts */
+        .callout {
+            background-color: #eff6ff;
+            border-right: 3px solid #3b82f6;
+            padding: 10px 14px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 9pt;
+            color: #1e40af;
+        }
+
+        .callout-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        /* Badge / Pill */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 7.5pt;
+            font-weight: 600;
+            border-radius: 12px;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            margin-left: 4px;
+        }
+
+        .badge-js { background-color: #fef08a; color: #854d0e; }
+        .badge-html { background-color: #ffedd5; color: #c2410c; }
+        .badge-css { background-color: #dbeafe; color: #1e40af; }
+        .badge-elastic { background-color: #dcfce7; color: #15803d; }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 8.5pt;
+        }
+
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 10px;
+            text-align: right;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        /* Code Block Styling */
+        .code-block {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 8pt;
+            direction: ltr;
+            text-align: left;
+            overflow-x: auto;
+            margin: 10px 0;
+            line-height: 1.4;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .code-comment { color: #64748b; }
+        .code-keyword { color: #f472b6; }
+        .code-string { color: #34d399; }
+        .code-func { color: #60a5fa; }
+
+        /* Workflow diagrams / steps */
+        .step-container {
+            margin: 10px 0;
+        }
+
+        .step-item {
+            display: table;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .step-num {
+            display: table-cell;
+            width: 24px;
+            height: 24px;
+            background-color: #2563eb;
+            color: white;
+            font-weight: bold;
+            border-radius: 50%;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 8pt;
+        }
+
+        .step-content {
+            display: table-cell;
+            padding-right: 10px;
+            vertical-align: middle;
+        }
+
+        /* Footer Note */
+        .footer-note {
+            text-align: center;
+            font-size: 8pt;
+            color: #94a3b8;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Banner -->
+    <div class="header-banner">
+        <h1>گزارش فنی و معماری فاز چهارم (Frontend & Elasticsearch)</h1>
+        <p>سیستم جامع آنلاین رزرو و مدیریت بلیط مسابقات ورزشی (BookingSportTickets)</p>
+        <div class="meta-grid">
+            <div class="meta-row">
+                <div class="meta-cell"><strong>پروژه:</strong> سامانه بلیط‌فروشی ورزشی</div>
+                <div class="meta-cell"><strong>فاز:</strong> چهارم (رابط کاربری و موتور جستجو)</div>
+            </div>
+            <div class="meta-row">
+                <div class="meta-cell"><strong>تکنولوژی‌های فرانت‌اند:</strong> HTML5 / CSS3 / Vanilla JavaScript (ES6+)</div>
+                <div class="meta-cell"><strong>موتور جستجو:</strong> Elasticsearch 8.x</div>
+            </div>
+            <div class="meta-row">
+                <div class="meta-cell"><strong>بک‌اند و دیتابیس:</strong> FastAPI / PostgreSQL (Neon) / Redis (Upstash)</div>
+                <div class="meta-cell"><strong>تاریخ تنظیم:</strong> مرداد ۱۴۰۵</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 1: Executive Overview -->
+    <div class="section">
+        <h2 class="section-title">۱. خلاصه مدیریتی و اهداف فاز چهارم</h2>
+        <p>
+            در فاز چهارم پروژه «سامانه رزرو بلیط مسابقات ورزشی»، هدف اصلی ایجاد یک رابط کاربری (Frontend) سبک، سریع و کاربرپسند جهت اتصال به APIهای توسعه‌یافته در فاز سوم (FastAPI) و همچنین یکپارچه‌سازی موتور جستجوی پیشرفته <strong>Elasticsearch</strong> برای ارائه قابلیت جستجو و فیلتر آنلاین بلیط‌ها با کارایی فوق‌العاده بالا بوده است.
+        </p>
+        <div class="callout">
+            <div class="callout-title">دستاوردهای کلیدی فاز چهارم:</div>
+            <ul>
+                <li><strong>پیاده‌سازی فرانت‌اند بدون وابستگی به فریم‌ورک‌های سنگین:</strong> استفاده از Vanilla JS (JS خالص)، HTML5 و CSS3 جهت صفر کردن زمان Build، کاهش حجم برنامه و سادگی اجرا.</li>
+                <li><strong>ماژولارکننده جامع شبکه (Centralized API Client):</strong> طراحی الگوی Singleton در فایل <code>api.js</code> جهت مدیریت متمرکز Fetch، مدیریت خودکار توکن‌های JWT، هندلینگ دقیق خطاهای FastAPI و یکسان‌سازی فرمت داده‌ها.</li>
+                <li><strong>ارتباط مستقیم با Elasticsearch:</strong> هدایت کوئری‌های جستجوی بلیط از فرانت‌اند به لایه Elasticsearch در بک‌اند جهت دستیابی به زمان پاسخ‌دهی زیر چند میلی‌ثانیه و جستجوی چندمعیاره (نام تیم، ورزش، شهر، بازه قیمت و تاریخ).</li>
+                <li><strong>پوشش کامل سناریوهای کاربری:</strong> شامل احراز هویت دومرحله‌ای (OTP)، ثبت‌نام/ورود، انتخاب صندلی و رزرو موقت، پرداخت آنلاین شبیه‌سازی‌شده با رمز پویا، محاسبه هوشمند جریمه کنسلی و ثبت گزارش‌های پشتیبانی.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Section 2: Architecture & Tech Stack Justifications -->
+    <div class="section">
+        <h2 class="section-title">۲. پشته فناوری (Tech Stack) و چرایی انتخاب‌ها</h2>
+        <p>
+            در طراحی فاز چهارم، تصمیمات معماری بر پایه اصل سادگی، بازدهی بالا و اجتناب از پیچیدگی‌های غیرضروری (Over-engineering) اتخاذ شده است:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 20%;">تکنولوژی</th>
+                    <th style="width: 25%;">نقش در سیستم</th>
+                    <th style="width: 55%;">دلایل و توجیه فنی انتخاب</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>HTML5 & CSS3</strong></td>
+                    <td>ساختار صفحات و استایل‌دهی بصری</td>
+                    <td>طراحی کاملاً Responsive، بارگذاری آنی، استفاده از CSS Grid و Flexbox جهت چیدمان کارت‌های بلیط و فرم‌ها بدون نیاز به کتابخانه‌های سنگین خارجی.</td>
+                </tr>
+                <tr>
+                    <td><strong>Vanilla JavaScript (ES6+)</strong></td>
+                    <td>منطق فرانت‌اند و مدیریت DOM</td>
+                    <td>عدم نیاز به ابزارهای Bundler (مانند Webpack/Vite) یا فرآیند Compile؛ اجرای مستقیم در مرورگر؛ مدیریت Fetch API به صورت Native با عملکرد و سرعت بالا.</td>
+                </tr>
+                <tr>
+                    <td><strong>Elasticsearch</strong></td>
+                    <td>موتور جستجو و فیلتر پیشرفته بلیط‌ها</td>
+                    <td>از بین بردن بار کوئری‌های سنگین متنی از روی PostgreSQL (Neon Cloud)؛ پشتیبانی از Full-text Search، فیلتر ترکیبی چند فیلدی و سرعت پاسخ‌دهی شگفت‌انگیز در حجم بالای داده.</td>
+                </tr>
+                <tr>
+                    <td><strong>JWT (Local Storage)</strong></td>
+                    <td>مدیریت نشست و احراز هویت کاربری</td>
+                    <td>نگهداری امن توکن JWT در <code>localStorage</code> مرورگر و تزریق اتوماتیک آن در هدر <code>Authorization: Bearer</code> تمامی درخواست‌های نیازمند احراز هویت.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section 3: Directory Structure & File Map -->
+    <div class="section">
+        <h2 class="section-title">۳. ساختار پوشه‌بندی و معماری فایل‌های فرانت‌اند</h2>
+        <p>
+            پوشه <code>frontend</code> به گونه‌ای سازمان‌دهی شده است که جداسازی وظایف (Separation of Concerns) به دقیق‌ترین شکل ممکن رعایت شود:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">نام فایل</th>
+                    <th style="width: 15%;">نوع / دسته‌بندی</th>
+                    <th style="width: 60%;">شرح وظیفه و نحوه‌ی عملکرد در پروژه</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>api.js</code></td>
+                    <td><span class="badge badge-js">JS Module</span></td>
+                    <td><strong>هسته اصلی شبکه:</strong> شامل تابع Wrapper سفارشی <code>request()</code>، افزودن خودکار هدر JWT، ساخت هدرها در <code>getHeaders()</code>، مدیریت خطای 401، استخراج پیام‌های خطای Validation در FastAPI و دسته‌بندی APIها در اشیاء <code>auth</code>, <code>users</code>, <code>tickets</code>, <code>reservations</code>, <code>reports</code>, <code>admin</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>index.html</code> / <code>search.js</code></td>
+                    <td><span class="badge badge-html">HTML</span> / <span class="badge badge-js">JS</span></td>
+                    <td><strong>صفحه اصلی و جستجو:</strong> دریافت فیلترهای ورودی کاربر (نوع ورزش، شهر، قیمت، تاریخ) و ارسال آن به <code>API.tickets.search()</code> متصل به Elasticsearch؛ رندر دینامیک کارت‌های بلیط و نمایش جزئیات صندلی‌ها.</td>
+                </tr>
+                <tr>
+                    <td><code>login.html</code> / <code>login.css</code> / <code>auth.js</code></td>
+                    <td><span class="badge badge-html">HTML</span> / <span class="badge badge-js">JS</span></td>
+                    <td><strong>ورود و احراز هویت OTP:</strong> فرم ورود کاربر با کلمه عبور و همچنین جریان درخواست و تایید کد یکبارمصرف (OTP) از طریق Redis در بک‌اند؛ ذخیره توکن دریافتی در <code>localStorage</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>signup.html</code> / <code>signup.js</code></td>
+                    <td><span class="badge badge-html">HTML</span> / <span class="badge badge-js">JS</span></td>
+                    <td><strong>ثبت‌نام کاربران جدید:</strong> دریافت اطلاعات هویت، ایمیل، شماره تماس و کلمه عبور؛ ارسال داده به <code>API.auth.signup()</code> و هدایت اتوماتیک به صفحه ورود.</td>
+                </tr>
+                <tr>
+                    <td><code>checkout.html</code> / <code>checkout.js</code></td>
+                    <td><span class="badge badge-html">HTML</span> / <span class="badge badge-js">JS</span></td>
+                    <td><strong>تکمیل رزرو و پرداخت:</strong> قفل صندلی‌های انتخابی، محاسبه قیمت کل، درخواست رمز پویا کارت بانکی (OTP) و ارسال نهایی تراکنش جهت نهایی‌سازی خرید بلیط.</td>
+                </tr>
+                <tr>
+                    <td><code>profile.html</code> / <code>profile.js</code></td>
+                    <td><span class="badge badge-html">HTML</span> / <span class="badge badge-js">JS</span></td>
+                    <td><strong>داشبورد کاربری و پشتیبانی:</strong> نمایش لیست بلیط‌های خریداری‌شده، استعلام جریمه کنسلی با <code>API.reservations.checkPenalty()</code>، ثبت کنسلی، ویرایش پروفایل و ثبت گزارش مشکل/پشتیبانی.</td>
+                </tr>
+                <tr>
+                    <td><code>style.css</code></td>
+                    <td><span class="badge badge-css">CSS</span></td>
+                    <td><strong>استایل‌های عمومی پروژه:</strong> متغیرهای رنگی CSS، ریست استاندارد، کارت‌های بلیط، دکمه‌ها، جدول‌ها، مدال‌ها و پاسخگویی به سایزهای مختلف نمایشگر (Responsive Design).</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section 4: Deep Dive into api.js -->
+    <div class="section">
+        <h2 class="section-title">۴. تحلیل تخصصی ماژول ارتباطی شبکه (<code>api.js</code>)</h2>
+        <p>
+            فایل <code>api.js</code> نقطه‌عطف فرانت‌اند در ارتباط با بک‌اند FastAPI است. این فایل تمام پیچیدگی‌های مربوط به مدیریت HTTP Headerها، احراز هویت و پارس کردن خطاها را کپسوله‌سازی کرده است.
+        </p>
+
+        <h3 class="subsection-title">۴.۱. الگوی متمرکز Fetch و مدیریت توکن JWT</h3>
+        <p>
+            تابع <code>request()</code> به عنوان یک ابزار Wrapper روی <code>fetch()</code> عمل می‌کند. این تابع پیش از ارسال هر درخواست، هدرهای ضروری و توکن موجود در <code>localStorage</code> را تزریق می‌کند:
+        </p>
+
+        <div class="code-block">
+<span class="code-keyword">function</span> <span class="code-func">getHeaders</span>(customHeaders = {}) {
+    <span class="code-keyword">const</span> headers = {
+        <span class="code-string">'Content-Type'</span>: <span class="code-string">'application/json'</span>,
+        ...customHeaders
+    };
+    <span class="code-keyword">const</span> token = localStorage.getItem(<span class="code-string">'token'</span>);
+    <span class="code-keyword">if</span> (token) {
+        headers[<span class="code-string">'Authorization'</span>] = <span class="code-string">`Bearer ${token}`</span>;
+    }
+    <span class="code-keyword">return</span> headers;
+}
+        </div>
+
+        <h3 class="subsection-title">۴.۲. مدیریت دقیق خطاها و فرمت‌های FastAPI</h3>
+        <p>
+            یکی از چالش‌های فرانت‌اند، مواجهه با خطاهای اعتبارسنجی (Validation Errors) در FastAPI است که به‌صورت آرایه‌ای در <code>data.detail</code> بازمی‌گردند. در <code>api.js</code> این موضوع به زیبایی استانداردسازی شده است:
+        </p>
+
+        <div class="code-block">
+<span class="code-comment">// استخراج هوشمند پیام‌های خطا</span>
+<span class="code-keyword">if</span> (!response.ok) {
+    <span class="code-keyword">let</span> errorMessage = <span class="code-string">`خطای سرور (کد ${response.status})`</span>;
+
+    <span class="code-keyword">if</span> (<span class="code-keyword">typeof</span> data.detail === <span class="code-string">'string'</span>) {
+        errorMessage = data.detail;
+    } <span class="code-keyword">else if</span> (Array.isArray(data.detail)) {
+        <span class="code-comment">// نگاشت خطاهای Pydantic / FastAPI</span>
+        errorMessage = data.detail.map(err => err.msg || <span class="code-string">'خطای ورودی'</span>).join(<span class="code-string">' | '</span>);
+    } <span class="code-keyword">else if</span> (data.message) {
+        errorMessage = data.message;
+    }
+    <span class="code-keyword">throw new</span> Error(errorMessage);
+}
+        </div>
+
+        <h3 class="subsection-title">۴.۳. ساختار متدها و فضاهای نام (Namespaces)</h3>
+        <p>
+            توابع API به‌صورت کاملاً تمیز بر اساس حوزه‌های کاری (Domain Services) دسته‌بندی شده‌اند. به عنوان مثال، ساخت پارامترهای جستجوی تمیز (تمیزکاری پارامترهای خالی یا null) در سرویس بلیط‌ها:
+        </p>
+
+        <div class="code-block">
+tickets: {
+    <span class="code-func">search</span>: (params = {}) => {
+        <span class="code-keyword">const</span> cleanParams = {};
+        Object.keys(params).forEach(key => {
+            <span class="code-keyword">if</span> (params[key] !== null && params[key] !== undefined && params[key] !== <span class="code-string">''</span>) {
+                cleanParams[key] = params[key];
+            }
+        });
+        <span class="code-keyword">const</span> queryString = <span class="code-keyword">new</span> URLSearchParams(cleanParams).toString();
+        <span class="code-keyword">const</span> endpoint = queryString ? <span class="code-string">`/tickets/?${queryString}`</span> : <span class="code-string">'/tickets/'</span>;
+        <span class="code-keyword">return</span> request(endpoint, { method: <span class="code-string">'GET'</span> });
+    }
+}
+        </div>
+    </div>
+
+    <!-- Section 5: End-to-End Workflows -->
+    <div class="section">
+        <h2 class="section-title">۵. جریان‌های کاری و گردش داده در سامانه (Workflows)</h2>
+
+        <div class="step-container">
+            <h3 class="subsection-title">سناریوی ۱: جریان جستجو با Elasticsearch و انتخاب صندلی</h3>
+            <div class="step-item">
+                <div class="step-num">۱</div>
+                <div class="step-content">کاربر در <code>index.html</code> نام ورزشی یا شهر را وارد کرده و دکمه جستجو را می‌زند.</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">۲</div>
+                <div class="step-content">فایل <code>search.js</code> تابع <code>API.tickets.search(params)</code> را فراخوانی می‌کند.</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">۳</div>
+                <div class="step-content">بک‌اند درخواست را تحویل گرفته و کوئری متنی چندمعیاره را روی نمایه (Index) <strong>Elasticsearch</strong> اجرا می‌کند.</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">۴</div>
+                <div class="step-content">نتایج حاصل در فرانت‌اند به‌صورت کارت‌های گرافیکی رندر شده و صندلی‌های خالی نمایش داده می‌شوند.</div>
+            </div>
+        </div>
+
+        <div class="step-container">
+            <h3 class="subsection-title">سناریوی ۲: رزرو موقت، درخواست رمز پویا و پرداخت بانکی</h3>
+            <div class="step-item">
+                <div class="step-num">۱</div>
+                <div class="step-content">کاربر صندلی‌ها را انتخاب کرده و در <code>checkout.html</code> دکمه ثبت رزرو را می‌زند (فراخوانی <code>API.reservations.create</code>).</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">۲</div>
+                <div class="step-content">در صفحه پرداخت، کاربر شماره کارت را وارد کرده و روی «درخواست رمز پویا» کلیک می‌کند (فراخوانی <code>API.reservations.requestOtp</code>).</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">۳</div>
+                <div class="step-content">پس از ورود رمز پویا و تایید، پرداخت نهایی انجام شده و بلیط به وضعیت «خریداری‌شده» تغییر می‌یابد.</div>
+            </div>
+        </div>
+
+        <div class="step-container">
+            <h3 class="subsection-title">سناریوی ۳: محاسبه هوشمند جریمه کنسلی در پروفایل</h3>
+            <div class="step-item">
+                <div class="step-num">۱</div>
+                <div class="step-content">کاربر در <code>profile.html</code> لیست بلیط‌های خود را مشاهده می‌کند (با فراخوانی <code>API.reservations.getMyReservations</code>).</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">۲</div>
+                <div class="step-content">با کلیک روی دکمه استعلام کنسلی، <code>API.reservations.checkPenalty(id)</code> میزان درصد جریمه را بر اساس فاصله زمانی تا شروع مسابقه محاسبه و به کاربر پیش‌نمایش می‌دهد.</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">۳</div>
+                <div class="step-content">پس از تایید نهایی کاربر، مبلغ پس از کسر جریمه به کیف پول کاربر عودت داده شده و صندلی در دیتابیس آزاد می‌شود.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 6: Backend Elasticsearch Integration -->
+    <div class="section">
+        <h2 class="section-title">۶. یکپارچه‌سازی Elasticsearch در لایه بک‌اند</h2>
+        <p>
+            جهت برآورده ساختن الزامات فاز چهارم در بخش موتور جستجو، لایه بک‌اند به‌گونه‌ای توسعه یافته است که همگام‌سازی و جستجو را به شکل زیر انجام می‌دهد:
+        </p>
+        <ul>
+            <li><strong>ایندکس‌گذاری خودکار (Indexing Pipeline):</strong> هنگام تعریف یا ویرایش مسابقات و بلیط جدید در دیتابیس اصلی (PostgreSQL)، داده‌های متنی شامل عنوان مسابقه، نام تیم‌ها، ورزشگاه، شهر و نوع ورزش به سند (Document) در Elasticsearch تبدیل می‌شوند.</li>
+            <li><strong>ساختار کوئری (Multi-match & Range Filters):</strong> جستجوی کاربران از طریق ترکیبی از کوئری‌های <code>multi_match</code> (برای جستجوی متنی نام تیم‌ها و ورزشگاه) و <code>range</code> (برای فیلتر قیمت و تاریخ) انجام می‌شود.</li>
+            <li><strong>کاهش بار دیتابیس (Offloading):</strong> کوئری‌های پرحجم جستجو دیگر به PostgreSQL ارسال نمی‌شوند و به این ترتیب، عملکرد دیتابیس اصلی برای عملیات حیاتی Transaction (مانند پرداخت و ثبت رزرو) حفظ می‌گردد.</li>
+        </ul>
+    </div>
+
+    <!-- Section 7: Summary & Conclusion -->
+    <div class="section">
+        <h2 class="section-title">۷. جمع‌بندی فنی و وضعیت نهایی پروژه</h2>
+        <p>
+            با تکمیل فاز چهارم، «سامانه جامع رزرو بلیط مسابقات ورزشی» به یک محصول نرم‌افزاری کامل، چابک و قابل استقرار تبدیل شده است. معماری انتخابی در فرانت‌اند (Vanilla JS + API Client Pattern) همراه با سرعت خیره‌کننده Elasticsearch در بک‌اند، رابط کاربری روان و پاسخگویی آنی را برای کاربران به ارمغان آورده است. پروژه آماده ارزیابی نهایی و دفاع می‌باشد.
+        </p>
+    </div>
+
+    <div class="footer-note">
+        گزارش فنی فاز چهارم - سامانه رزرو بلیط مسابقات ورزشی | تهیه شده توسط تیم سه نفره دانشجویی
+    </div>
+
+</body>
+</html>
