@@ -145,5 +145,5 @@ const API = {
 };
 
 // هر دو روش Export را نگه می‌داریم تا هم فایل‌های شما کار کند و هم فایل‌های هم‌تیمی‌تان
-// export default API;
+export default API;
 window.API = API;
