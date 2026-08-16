@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
             tickets.forEach(ticket => {
                 const card = document.createElement('div');
                 card.className = 'ticket-card';
-                // اصلاح مسیر متغیرها بر اساس ساختار JSON بک‌اند
                 card.innerHTML = `
                     <h3>${ticket.match.home_team.name} - ${ticket.match.away_team.name}</h3>
                     <p><strong>ورزش:</strong> ${ticket.match.sport_type_name}</p>
@@ -53,12 +52,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        // اصلاح کلیدهای فیلتر دقیقاً مطابق با پارامترهای Swagger
+        
+        // دریافت مقادیر تمام فیلدها از جمله قیمت و تاریخ
         const filters = {
             q: document.getElementById('query').value,
             sport_type_id: document.getElementById('sport-type').value,
-            city_id: document.getElementById('city').value
+            city_id: document.getElementById('city').value,
+            min_price: document.getElementById('min-price').value,
+            max_price: document.getElementById('max-price').value,
+            date_from: document.getElementById('date-from').value,
+            date_to: document.getElementById('date-to').value
         };
+        
         loadTickets(filters);
     });
 
@@ -71,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const ticketDetail = await API.tickets.getDetails(ticketId);
             
-            // اصلاح مسیر متغیرها برای مُدال رزرو
             modalTitle.innerText = `${ticketDetail.match.home_team.name} - ${ticketDetail.match.away_team.name}`;
             modalBody.innerHTML = `
                 <p><strong>ورزش:</strong> ${ticketDetail.match.sport_type_name}</p>
