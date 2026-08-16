@@ -1,8 +1,9 @@
 # In the name of GOD
 from fastapi import FastAPI, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware  # ۱. اضافه شدن اینپورت CORS
+from fastapi.middleware.cors import CORSMiddleware
+from apscheduler.schedulers.background import BackgroundScheduler
 
-from app.core.database import check_db_health
+from app.core.database import check_db_health, get_db_connection
 from app.core.redis_client import check_redis_health
 from app.core.elasticsearch import check_es_health
 
@@ -26,14 +27,14 @@ app = FastAPI(
 )
 
 # ------------------------------------------------------------
-# ۲. تنظیمات CORS Middleware برای اجازه به مرورگر (Preflight / OPTIONS)
+# تنظیمات CORS Middleware
 # ------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # در محیط توسعه به تمام Originها اجازه داده می‌شود
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # اجازه به تمامی متدها (POST, GET, OPTIONS, PUT, DELETE)
-    allow_headers=["*"],  # اجازه به تمامی هدرها (Content-Type, Authorization, ...)
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ------------------------------------------------------------
@@ -47,6 +48,81 @@ app.include_router(users_router)
 app.include_router(reports_router)
 app.include_router(admin_router)
 app.include_router(reservations.router)
+
+
+# ------------------------------------------------------------
+# وظیفه پس‌زمینه (Background Job): پاک‌سازی رزروهای منقضی شده
+# ------------------------------------------------------------
+def cleanup_expired_reservations():
+    """این تابع هر چند دقیقه یک‌بار اجرا شده و رزروهای موقت بیش از ۱۰ دقیقه را منقضی می‌کند."""
+    print("[Scheduler] Running cleanup task for expired reservations...")
+    with get_db_connection() as conn:
+        # استفاده از کرسر معمولی چون فقط آپدیت انجام می‌دهیم
+        cursor = conn.cursor()
+        try:
+            # ۱. پیدا کردن رزروهایی که هنوز reserved هستند اما زمانشان گذشته
+            cursor.execute(
+                """
+                SELECT reservation_id, ticket_id, quantity 
+                FROM RESERVATIONS 
+                WHERE status = 'reserved' AND reserved_until < NOW();
+                """
+            )
+            expired_reservations = cursor.fetchall()
+
+            for res in expired_reservations:
+                res_id = res[0]
+                ticket_id = res[1]
+                quantity = res[2]
+
+                # ۲. آپدیت وضعیت رزرو به expired
+                cursor.execute("UPDATE RESERVATIONS SET status = 'expired' WHERE reservation_id = %s;", (res_id,))
+                
+                # ۳. آزاد کردن صندلی‌ها در RESERVED_SEATS
+                cursor.execute("UPDATE RESERVED_SEATS SET status = 'released' WHERE reservation_id = %s;", (res_id,))
+                
+                # ۴. آزاد کردن وضعیت صندلی‌ها در SEATS
+                cursor.execute(
+                    """
+                    UPDATE SEATS SET status = 'available'
+                    WHERE seat_id IN (SELECT seat_id FROM RESERVED_SEATS WHERE reservation_id = %s);
+                    """,
+                    (res_id,)
+                )
+                
+                # ۵. برگرداندن ظرفیت به بلیط
+                cursor.execute(
+                    "UPDATE TICKETS SET remaining_capacity = remaining_capacity + %s WHERE ticket_id = %s;",
+                    (quantity, ticket_id)
+                )
+
+            conn.commit()
+            if expired_reservations:
+                print(f"[Scheduler] Successfully expired and freed {len(expired_reservations)} reservations.")
+                
+        except Exception as e:
+            conn.rollback()
+            print(f"[Scheduler] Error in cleanup task: {e}")
+        finally:
+            cursor.close()
+
+# ساخت نمونه از زمان‌بند
+scheduler = BackgroundScheduler()
+# تعریف اجرای تابع هر ۱ دقیقه (می‌توانید به 2 یا 3 دقیقه هم تغییر دهید)
+scheduler.add_job(cleanup_expired_reservations, 'interval', minutes=1)
+
+# رویدادهای چرخه حیات اپلیکیشن (Startup / Shutdown)
+@app.on_event("startup")
+def startup_event():
+    # هنگام روشن شدن سرور، زمان‌بند را استارت می‌زنیم
+    scheduler.start()
+    print("[System] APScheduler started successfully.")
+
+@app.on_event("shutdown")
+def shutdown_event():
+    # هنگام خاموش شدن سرور، زمان‌بند را متوقف می‌کنیم
+    scheduler.shutdown()
+    print("[System] APScheduler shut down.")
 
 
 # ------------------------------------------------------------
