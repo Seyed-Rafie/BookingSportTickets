@@ -28,11 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const card = document.createElement('div');
                 card.className = 'ticket-card';
                 card.innerHTML = `
-                    <h3>${ticket.home_team} - ${ticket.away_team}</h3>
-                    <p><strong>ورزش:</strong> ${ticket.sport_type}</p>
-                    <p><strong>ورزشگاه:</strong> ${ticket.venue_name} (${ticket.city || 'نامشخص'})</p>
-                    <p><strong>تاریخ:</strong> ${new Date(ticket.match_datetime).toLocaleString('fa-IR')}</p>
-                    <p><strong>شروع قیمت از:</strong> ${Number(ticket.price).toLocaleString('fa-IR')} تومان</p>
+                    <h3>${ticket.match.home_team.name} - ${ticket.match.away_team.name}</h3>
+                    <p><strong>ورزش:</strong> ${ticket.match.sport_type_name}</p>
+                    <p><strong>ورزشگاه:</strong> ${ticket.match.venue_name} (${ticket.match.city_name || 'نامشخص'})</p>
+                    <p><strong>تاریخ:</strong> ${new Date(ticket.match.match_datetime).toLocaleString('fa-IR')}</p>
+
                     <div class="ticket-actions">
                         <button class="btn btn-primary view-details-btn" data-id="${ticket.ticket_id}">مشاهده و رزرو</button>
                     </div>
@@ -80,9 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             modalTitle.innerText = `${ticketDetail.match.home_team.name} - ${ticketDetail.match.away_team.name}`;
             modalBody.innerHTML = `
-                <p><strong>ورزش:</strong> ${ticketDetail.sport_type}</p>
-                <p><strong>ورزشگاه:</strong> ${ticketDetail.venue_name}</p>
-                <p><strong>زمان:</strong> ${new Date(ticketDetail.match_datetime).toLocaleString('fa-IR')}</p>
+                <p><strong>ورزش:</strong> ${ticketDetail.match.sport_type_name}</p>
+                <p><strong>ورزشگاه:</strong> ${ticketDetail.match.venue_name}</p>
+                <p><strong>زمان:</strong> ${new Date(ticketDetail.match.match_datetime).toLocaleString('fa-IR')}</p>
+
                 <p><strong>قیمت:</strong> ${Number(ticketDetail.price).toLocaleString('fa-IR')} تومان</p>
                 <p><strong>ظرفیت باقیمانده:</strong> ${ticketDetail.remaining_capacity} صندلی</p>
             `;
