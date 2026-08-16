@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>درگاه پرداخت امن - اسپورت‌تیکت</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        :root {
+            --bank-primary: #1b5e20;
+            --bank-accent: #2e7d32;
+            --bank-danger: #c62828;
+            --bank-warning: #f57c00;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .header-nav .logo {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--bank-primary);
+        }
+
+        .header-nav a {
+            text-decoration: none;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .checkout-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 1.5rem;
+            padding: 0 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .checkout-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* کارت خلاصه سفارش */
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+
+        .timer-box {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .timer-box.expired {
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            color: var(--bank-danger);
+            border-color: #ffcdd2;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px dashed #e0e0e0;
+            font-size: 0.95rem;
+            gap: 1rem;
+        }
+
+        .summary-item:last-of-type {
+            border-bottom: none;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--bank-primary);
+            border-top: 2px solid #e0e0e0;
+            margin-top: 0.5rem;
+        }
+
+        /* کارت درگاه پرداخت */
+        .gateway-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-top: 5px solid var(--bank-primary);
+        }
+
+        .gateway-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .gateway-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--bank-primary);
+        }
+
+        .ssl-badge {
+            font-size: 0.75rem;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-control:focus {
+            border-color: var(--bank-accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.15);
+        }
+
+        .form-control:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        .card-number-input {
+            direction: ltr;
+            text-align: center;
+            letter-spacing: 2px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .inline-inputs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .otp-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .otp-group .form-control {
+            flex: 1;
+        }
+
+        .btn-otp {
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: background 0.2s;
+            min-width: 150px;
+        }
+
+        .btn-otp:hover:not(:disabled) {
+            background: #d0d0d0;
+        }
+
+        .btn-otp:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-otp.requested {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .btn-pay {
+            width: 100%;
+            background: var(--bank-primary);
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn-pay:hover:not(:disabled) {
+            background: var(--bank-accent);
+        }
+
+        .btn-pay:disabled {
+            background: #a5d6a7;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 0.85rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .alert-danger { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+        .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+
+        .security-note {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff80;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-nav">
+        <div class="logo">🎟️ اسپورت‌تیکت | درگاه شاپرک</div>
+        <a href="index.html">انصراف و بازگشت</a>
+    </header>
+
+    <div class="checkout-container">
+        
+        <!-- کارت خلاصه رزرو -->
+        <div class="summary-card">
+            <div id="reservation-timer" class="timer-box">
+                ⏰ مهلت پرداخت: <span id="timer-display">10:00</span>
+            </div>
+
+            <h3 style="margin-bottom: 1rem; color: #333; font-size: 1.1rem;">پیش‌نمایش فاکتور</h3>
+            
+            <div id="summary-content">
+                <p style="text-align: center; color: #888;">در حال دریافت اطلاعات رزرو...</p>
+            </div>
+
+            <div class="security-note">
+                🔒 تمامی تراکنش‌ها با پروتکل SSL رمزنگاری می‌شوند.
+                اطلاعات کارت بانکی شما هرگز ذخیره نمی‌گردد.
+            </div>
+        </div>
+
+        <!-- کارت دریافت اطلاعات بانکی -->
+        <div class="gateway-card">
+            <div class="gateway-header">
+                <h2>پرداخت الکترونیکی</h2>
+                <span class="ssl-badge">🔒 اتصال امن SSL</span>
+            </div>
+
+            <div id="payment-msg" class="alert"></div>
+
+            <form id="payment-form" autocomplete="off">
+                <!-- شماره کارت -->
+                <div class="form-group">
+                    <label for="card-number">شماره ۱۶ رقمی کارت بانکی:</label>
+                    <input type="text" id="card-number" class="form-control card-number-input" 
+                           placeholder="____ - ____ - ____ - ____" maxlength="25" required inputmode="numeric">
+                </div>
+
+                <div class="inline-inputs">
+                    <!-- تاریخ انقضا -->
+                    <div class="form-group" style="flex: 1;">
+                        <label for="exp-month">تاریخ انقضا:</label>
+                        <div style="display: flex; gap: 0.25rem;">
+                            <input type="text" id="exp-month" class="form-control" 
+                                   placeholder="ماه (01)" maxlength="2" 
+                                   style="text-align: center;" required inputmode="numeric">
+                            <input type="text" id="exp-year" class="form-control" 
+                                   placeholder="سال (05)" maxlength="2" 
+                                   style="text-align: center;" required inputmode="numeric">
+                        </div>
+                    </div>
+
+                    <!-- کد CVV2 -->
+                    <div class="form-group" style="flex: 1;">
+                        <label for="cvv2">کد CVV2:</label>
+                        <input type="password" id="cvv2" class="form-control" 
+                               placeholder="3 یا 4 رقم" maxlength="4" 
+                               style="text-align: center; direction: ltr;" required inputmode="numeric">
+                    </div>
+                </div>
+
+                <!-- رمز دوم پویا OTP -->
+                <div class="form-group">
+                    <label for="otp-code">رمز دوم پویا (OTP):</label>
+                    <div class="otp-group">
+                        <input type="text" id="otp-code" class="form-control" 
+                               placeholder="کد دریافتی از بانک" maxlength="6" 
+                               style="text-align: center; direction: ltr;" 
+                               required inputmode="numeric" disabled>
+                        <button type="button" id="send-otp-btn" class="btn-otp">درخواست رمز پویا</button>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-pay-btn" class="btn-pay">تکمیل پرداخت و رزرو قطعی</button>
+            </form>
+        </div>
+
+    </div>
+
+    <script type="module" src="js/checkout.js?v=2"></script>
+</body>
+</html>

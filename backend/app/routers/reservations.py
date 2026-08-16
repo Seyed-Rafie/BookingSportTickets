@@ -1,16 +1,19 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 import uuid
+import random
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from psycopg2.extras import RealDictCursor
 
 from app.core.database import get_db_connection
 from app.core.dependencies import get_current_user
+from app.core.redis_client import redis_client  # اضافه شد برای مدیریت OTP
 from app.schemas.reservation import (
     ReservationCreate,
     ReservationResponse,
     PaymentCreate,
+    PaymentOtpRequest,  # اضافه شد
     PaymentResponse,
     UserReservationHistory,
     ReservationSeatDetail,
@@ -128,6 +131,47 @@ def create_reservation(
 
 
 # =========================================================================
+# API جدید: درخواست رمز پویا (POST /reservations/payments/otp-request)
+# =========================================================================
+@router.post("/payments/otp-request", status_code=status.HTTP_200_OK)
+def request_payment_otp(
+    payload: PaymentOtpRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    user_id = current_user["user_id"]
+    reservation_id = payload.reservation_id
+
+    if len(payload.card_number) != 16:
+        raise HTTPException(status_code=400, detail="شماره کارت نامعتبر است.")
+
+    # بررسی وجود رزرو و متعلق بودن آن به کاربر
+    with get_db_connection() as conn:
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(
+            "SELECT status, user_id FROM RESERVATIONS WHERE reservation_id = %s",
+            (reservation_id,)
+        )
+        res = cursor.fetchone()
+        cursor.close()
+
+    if not res:
+        raise HTTPException(status_code=404, detail="رزرو یافت نشد.")
+    if res["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز.")
+    if res["status"] != "reserved":
+        raise HTTPException(status_code=400, detail="امکان درخواست OTP برای این رزرو وجود ندارد.")
+
+    # تولید OTP 6 رقمی و ذخیره در ردیس (مدت اعتبار: 120 ثانیه)
+    otp_code = str(random.randint(100000, 999999))
+    redis_client.setex(f"pay_otp:{reservation_id}", 120, otp_code)
+
+    # برای تست در محیط توسعه:
+    print(f"DEBUG: Payment OTP for Reservation {reservation_id} is: {otp_code}")
+
+    return {"message": "رمز پویا با موفقیت ارسال شد."}
+
+
+# =========================================================================
 # API شماره ۸: ثبت و نهایی‌سازی پرداخت (POST /reservations/payments)
 # =========================================================================
 @router.post("/payments", response_model=PaymentResponse, status_code=status.HTTP_200_OK)
@@ -166,7 +210,7 @@ def process_payment(
                     detail=f"امکان پرداخت وجود ندارد. وضعیت فعلی: {res['status']}"
                 )
 
-            # ۲. بررسی مهلت زمان ۱۰ دقیقه (با حذف منطق منطقه زمانی جهت مقایسه صحیح)
+            # ۲. بررسی مهلت زمان ۱۰ دقیقه
             reserved_until = res["reserved_until"]
             if hasattr(reserved_until, "tzinfo") and reserved_until.tzinfo is not None:
                 reserved_until = reserved_until.replace(tzinfo=None)
@@ -189,7 +233,22 @@ def process_payment(
                 conn.commit()
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="مهلت ۱۰ دقیقه‌ای پرداخت منقضی شده است.")
 
-            # ۳. ثبت پرداخت
+            # ----------------------------------------------------
+            # ۳. اعتبارسنجی OTP از طریق Redis (بخش اضافه شده)
+            # ----------------------------------------------------
+            cached_otp = redis_client.get(f"pay_otp:{reservation_id}")
+            if not cached_otp:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="رمز پویا منقضی شده یا درخواست نشده است.")
+            
+            if isinstance(cached_otp, bytes):
+                cached_otp = cached_otp.decode("utf-8")
+                
+            if str(cached_otp) != str(payload.otp_code):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="رمز پویا نامعتبر است.")
+            
+            redis_client.delete(f"pay_otp:{reservation_id}")  # حذف پس از استفاده
+
+            # ۴. ثبت پرداخت
             tx_code = f"TXN-{uuid.uuid4().hex[:10].upper()}"
             paid_at = datetime.now()
 
@@ -203,7 +262,7 @@ def process_payment(
             )
             pay_row = cursor.fetchone()
 
-            # ۴. نهایی‌سازی وضعیت رزرو و صندلی‌ها به 'paid' و 'sold'
+            # ۵. نهایی‌سازی وضعیت رزرو و صندلی‌ها به 'paid' و 'sold'
             cursor.execute("UPDATE RESERVATIONS SET status = 'paid' WHERE reservation_id = %s;", (reservation_id,))
             cursor.execute(
                 """

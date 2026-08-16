@@ -43,6 +43,8 @@ async function request(endpoint, options = {}) {
         // اگر توکن منقضی یا نامعتبر بود (401 Unauthorized)، توکن پاک می‌شود
         if (response.status === 401) {
             localStorage.removeItem('token');
+            // هدایت به صفحه لاگین در صورت عدم دسترسی
+            // window.location.href = 'login.html'; 
         }
 
         // استخراج پاسخ JSON (در صورت خالی بودن پاسخ، یک شیء خالی برمی‌گرداند)
@@ -97,7 +99,7 @@ const API = {
     // -------------------------------------------------------------
     // ۱. احراز هویت و مدیریت کاربران
     // -------------------------------------------------------------
-     auth: {
+    auth: {
         sendOTP: (payload) => 
             request('/auth/send-otp', { method: 'POST', body: normalizeOtpPayload(payload) }),
         sendOtp: (payload) => 
@@ -154,17 +156,18 @@ const API = {
 
         getVenues: () => 
             request('/venues', { method: 'GET' }),
-    }, // <-- بخش تکراری و خراب اینجا حذف شد
+    }, 
 
     // -------------------------------------------------------------
     // ۴. رزرو، پرداخت و کنسلی
     // -------------------------------------------------------------
     reservations: {
-        create: (ticketId, quantity = 1) => 
-            request('/reservations', { method: 'POST', body: { ticket_id: ticketId, quantity } }),
-
-        pay: (reservationId) => 
-            request(`/payments/${reservationId}`, { method: 'POST' }),
+        // ارسال لیست صندلی‌های انتخابی
+        create: (ticketId, seatIds = []) => 
+            request('/reservations', { 
+                method: 'POST', 
+                body: { ticket_id: ticketId, seat_ids: seatIds } 
+            }),
 
         getMyReservations: () => 
             request('/reservations/me', { method: 'GET' }),
@@ -174,6 +177,20 @@ const API = {
 
         cancel: (reservationId) => 
             request(`/reservations/${reservationId}/cancel`, { method: 'POST' }),
+
+        // درخواست رمز پویا (OTP) برای پرداخت
+        requestOtp: (reservationId, cardNumber) =>
+            request('/reservations/payments/otp-request', {
+                method: 'POST',
+                body: { reservation_id: parseInt(reservationId), card_number: cardNumber }
+            }),
+
+        // ثبت نهایی پرداخت با اطلاعات کارت و OTP
+        pay: (paymentData) => 
+            request('/reservations/payments', { 
+                method: 'POST', 
+                body: paymentData
+            }),
     },
 
     // -------------------------------------------------------------

@@ -11,6 +11,7 @@ class ReservationCreate(BaseModel):
     ticket_id: int = Field(..., description="شناسه بلیط مسابقه")
     seat_ids: List[int] = Field(..., min_length=1, description="لیست شناسه‌های صندلی انتخابی")
 
+
 class ReservationResponse(BaseModel):
     reservation_id: int
     user_id: int
@@ -24,11 +25,22 @@ class ReservationResponse(BaseModel):
 
 
 # ==========================================
-# ۲. مدل‌های API شماره ۸: ثبت پرداخت (POST /reservations/payments)
+# ۲. مدل‌های API شماره ۸: درخواست OTP و ثبت پرداخت (POST /reservations/payments)
 # ==========================================
+class PaymentOtpRequest(BaseModel):
+    reservation_id: int = Field(..., description="شناسه رزرو")
+    card_number: str = Field(..., min_length=16, max_length=16, description="شماره کارت ۱۶ رقمی")
+
+
 class PaymentCreate(BaseModel):
     reservation_id: int = Field(..., description="شناسه رزرو")
-    method: str = Field(..., example="bank_card", description="روش پرداخت: bank_card, online, wallet, fake")
+    method: str = Field("bank_card", example="bank_card", description="روش پرداخت: bank_card, online, wallet, fake")
+    card_number: str = Field(..., max_length=16, description="شماره کارت")
+    expiry_month: str = Field(..., max_length=2, description="ماه انقضا")
+    expiry_year: str = Field(..., max_length=2, description="سال انقضا")
+    cvv2: str = Field(..., max_length=4, description="کد CVV2")
+    otp_code: str = Field(..., max_length=6, description="رمز پویا")
+
 
 class PaymentResponse(BaseModel):
     payment_id: int
@@ -48,6 +60,7 @@ class ReservationSeatDetail(BaseModel):
     section: Optional[str]
     row: Optional[str]
     seat_number: Optional[str]
+
 
 class UserReservationHistory(BaseModel):
     reservation_id: int
