@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from psycopg2.extras import RealDictCursor
 
 from app.core.database import get_db_connection
+from app.core.elasticsearch import sync_ticket_to_es
 from app.core.dependencies import get_current_user
 from app.core.redis_client import redis_client  # اضافه شد برای مدیریت OTP
 from app.schemas.reservation import (
@@ -102,6 +103,7 @@ def create_reservation(
                 "UPDATE TICKETS SET remaining_capacity = remaining_capacity - %s WHERE ticket_id = %s;",
                 (quantity, ticket_id)
             )
+            sync_ticket_to_es(ticket_id)
 
             conn.commit()
 
