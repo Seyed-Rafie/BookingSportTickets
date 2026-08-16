@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گزارش جامع و نهایی پروژه سامانه رزرو بلیت مسابقات ورزشی (BookingSportTickets)</title>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --primary-light: #3b82f6;
+            --secondary-color: #0f172a;
+            --accent-color: #0d9488;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #334155;
+            --border-color: #e2e8f0;
+            --badge-get: #10b981;
+            --badge-post: #2563eb;
+            --badge-put: #f59e0b;
+            --badge-delete: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        header {
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 25px;
+            margin-bottom: 35px;
+            text-align: center;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+        }
+
+        header p {
+            color: #64748b;
+            font-size: 1.05rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .meta-item {
+            font-size: 0.95rem;
+        }
+
+        .meta-item strong {
+            color: var(--primary-color);
+        }
+
+        nav.toc {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 40px;
+        }
+
+        nav.toc h2 {
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+        }
+
+        nav.toc ul {
+            list-style-type: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 10px;
+        }
+
+        nav.toc a {
+            color: #1d4ed8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        nav.toc a:hover {
+            text-decoration: underline;
+        }
+
+        section {
+            margin-bottom: 45px;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            font-size: 1.6rem;
+            border-right: 5px solid var(--primary-color);
+            padding-right: 12px;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            font-size: 1.25rem;
+            margin: 20px 0 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-right: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.92rem;
+        }
+
+        table th, table td {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-align: right;
+        }
+
+        table th {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .badge-get { background-color: var(--badge-get); }
+        .badge-post { background-color: var(--badge-post); }
+        .badge-put { background-color: var(--badge-put); }
+        .badge-delete { background-color: var(--badge-delete); }
+
+        .callout {
+            background-color: #f0fdf4;
+            border-right: 4px solid var(--accent-color);
+            padding: 15px 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .callout-title {
+            font-weight: bold;
+            color: #065f46;
+            margin-bottom: 5px;
+        }
+
+        .code-block {
+            background-color: #1e293b;
+            color: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            direction: ltr;
+            text-align: left;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.88rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .card h4 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        footer {
+            margin-top: 50px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>گزارش جامع و نهایی پروژه سامانه آنلاین رزرو و خرید بلیت مسابقات ورزشی</h1>
+        <p>پلتفرم BookingSportTickets - از طراحی مفهومی پایگاه داده تا پیاده‌سازی سرویس بک‌اند، موتور جستجو و رابط کاربری</p>
+        
+        <div class="meta-grid">
+            <div class="meta-item"><strong>پروژه:</strong> سامانه جامع بلیت‌فروشی ورزشی</div>
+            <div class="meta-item"><strong>تیم توسعه:</strong> ۳ دانشجوی پر تلاش</div>
+            <div class="meta-item"><strong>تاریخ تنظیم:</strong> مرداد ۱۴۰۵</div>
+            <div class="meta-item"><strong>میزبانی دیتابیس:</strong> PostgreSQL (Neon.tech)</div>
+        </div>
+    </header>
+
+    <nav class="toc">
+        <h2>فهرست مطالب گزارش</h2>
+        <ul>
+            <li><a href="#sec-intro">۱. خلاصه مدیریتی و اهداف پروژه</a></li>
+            <li><a href="#sec-phase1">۲. فاز اول: تحلیل و طراحی ۳۰ جدول پایگاه داده (3NF)</a></li>
+            <li><a href="#sec-phase2">۳. فاز دوم: بهینه‌سازی دیتابیس، پروسجرها و ایندکس‌گذاری</a></li>
+            <li><a href="#sec-phase3">۴. فاز سوم: توسعه سرویس بک‌اند (FastAPI)، Redis و امنیت</a></li>
+            <li><a href="#sec-phase4">۵. فاز چهارم: رابط کاربری (Frontend) و Elasticsearch</a></li>
+            <li><a href="#sec-workflows">۶. تحلیل جریان‌های کاری کلیدی (End-to-End Workflows)</a></li>
+            <li><a href="#sec-conclusion">۷. ارزیابی نهایی و دستاوردهای پروژه</a></li>
+        </ul>
+    </nav>
+
+    <!-- SECTION 1 -->
+    <section id="sec-intro">
+        <h2>۱. خلاصه مدیریتی و اهداف پروژه</h2>
+        <p>
+            پروژه <strong>BookingSportTickets</strong> با هدف ارائه یک پلتفرم جامع، مقیاس‌پذیر و فوق‌العاده سریع برای خرید و رزرو آنلاین بلیت مسابقات مختلف ورزشی (فوتبال، والیبال، بسکتبال و...) طراحی و پیاده‌سازی شده است. این سیستم به گونه‌ای معماری شده که توانایی مدیریت تراکنش‌های مالی همزمان، جلوگیری از فروش تکراری بلیت (Overbooking)، جستجوی چندمعیاره با سرعت میلی‌ثانیه‌ای و مدیریت هوشمند قوانین استرداد و پشتیبانی را دارا باشد.
+        </p>
+        <p>
+            توسعه این نرم‌افزار طی چهار فاز منسجم و تکاملی انجام پذیرفته است:
+        </p>
+        <div class="grid-2">
+            <div class="card">
+                <h4>فاز اول: تحلیل و نرم‌سازی</h4>
+                <p>تحلیل ۳۰ جدول پایگاه داده بر اساس استاندارد 3NF، تفکیک موجودیت‌ها و پیاده‌سازی چندریختی (Polymorphism) برای ورزش‌های مختلف[cite: 4].</p>
+            </div>
+            <div class="card">
+                <h4>فاز دوم: منطق پایگاه داده</h4>
+                <p>توسعه Stored Procedureها، توابع اختصاصی، کوئری‌های پیچیده گزارش‌گیری و ایندکس‌گذاری B-Tree جهت افزایش بازدهی PostgreSQL.</p>
+            </div>
+            <div class="card">
+                <h4>فاز سوم: سرویس‌دهی بک‌اند</h4>
+                <p>پیاده‌سازی REST APIها با FastAPI، مدیریت قفل‌های موقت و کش با Redis (Upstash) و ساختار احراز هویت JWT/RBAC[cite: 5].</p>
+            </div>
+            <div class="card">
+                <h4>فاز چهارم: فرانت‌اند و موتور جستجو</h4>
+                <p>توسعه رابط کاربری چابک با Vanilla JS، ماژول شبکه متمرکز `api.js` و یکپارچه‌سازی Elasticsearch 8.x برای فیلتر آنی[cite: 6].</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec-phase1">
+        <h2>۲. فاز اول: تحلیل و طراحی ۳۰ جدول پایگاه داده (3NF)</h2>
+        <p>
+            پایگاه داده سامانه با ۳۰ جدول کاملاً نرمال‌سازی‌شده (فرم نرمال سوم - 3NF) طراحی شده است[cite: 4]. این ساختار از وجود داده‌های تکراری و ناهنجاری‌های ویرایشی جلوگیری کرده و انعطاف‌پذیری بالایی را فراهم می‌سازد[cite: 4]. موجودیت‌های سیستم به ۷ حوزه اصلی تقسیم شده‌اند[cite: 4]:
+        </p>
+
+        <h3>۲.۱. مدیریت کاربران، دسترسی‌ها و کیف پول</h3>
+        <ul>
+            <li><strong>ROLES (نقش‌ها):</strong> تعیین سطح دسترسی افراد (تماشاگر عادی، پشتیبان، مدیر) جهت کنترل دسترسی متمرکز و رعایت 3NF[cite: 4].</li>
+            <li><strong>USERS (کاربران):</strong> نگهداری اطلاعات پایه احراز هویت (نام، ایمیل، تلفن، هش رمز عبور)[cite: 4].</li>
+            <li><strong>USERS_SUPPORT (کاربران پشتیبانی):</strong> نگهداری اطلاعات اختصاصی کادر پشتیبانی (کد پرسنلی) با رابطه 1:1 جهت جلوگیری از ستون‌های NULL در جدول اصلی[cite: 4].</li>
+            <li><strong>WALLETS (کیف پول):</strong> موجودی اعتباری حساب کاربر جهت پرداخت سریع و تسریع فرآیند استرداد وجه[cite: 4].</li>
+            <li><strong>TRANSACTIONS_WALLET (تراکنش‌های کیف پول):</strong> ثبت دقیق گردش مالی (شارژ، برداشت، عودت) جهت حسابرسی مالی کامل (Audit Trail)[cite: 4].</li>
+        </ul>
+
+        <h3>۲.۲. تقسیمات کشوری و مکان‌ها</h3>
+        <ul>
+            <li><strong>PROVINCES (استان‌ها) & CITIES (شهرها):</strong> ساختار هرمی برای جلوگیری از خطای تایپی و فیلتر مسابقات بر اساس موقعیت جغرافیایی[cite: 4].</li>
+            <li><strong>VENUES (ورزشگاه‌ها/سالن‌ها):</strong> اطلاعات محل برگزاری (نام، آدرس و ظرفیت کل) جهت کنترل عدم فروش مازاد بلیت[cite: 4].</li>
+        </ul>
+
+        <h3>۲.۳. ساختار ورزشی، مسابقات و برگزارکنندگان</h3>
+        <ul>
+            <li><strong>TYPES_SPORT (انواع رشته‌های ورزشی):</strong> تعریف ورزش‌های مختلف (فوتبال، والیبال، بسکتبال)[cite: 4].</li>
+            <li><strong>ORGANIZERS (برگزارکنندگان):</strong> نهادهای مسئول (سازمان لیگ، فدراسیون‌ها) جهت تعیین سیاست‌های کنسلی مجزا[cite: 4].</li>
+            <li><strong>TEAMS (تیم‌ها):</strong> تعریف تیم‌های ورزشی، شهر و ورزش مرجع جهت تعیین تیم میزبان/میهمان[cite: 4].</li>
+            <li><strong>COMPETITIONS (تورنمنت‌ها/لیگ‌ها):</strong> دسته‌بندی مسابقات بر اساس فصل و تورنمنت (لیگ برتر، جام حذفی)[cite: 4].</li>
+            <li><strong>MATCHES (مسابقات):</strong> هسته اصلی رویدادها شامل ترکیب "تیم میزبان + میهمان + ورزشگاه + زمان + برگزارکننده"[cite: 4].</li>
+        </ul>
+
+        <h3>۲.۴. بلیت‌فروشی، صندلی‌ها و جزئیات اختصاصی (Polymorphism)</h3>
+        <ul>
+            <li><strong>CATEGORIES_TICKET (دسته‌بندی بلیت‌ها):</strong> بخش‌بندی استادیوم (روبروی جایگاه، جایگاه ویژه، پشت دروازه) برای قیمت‌گذاری متفاوت[cite: 4].</li>
+            <li><strong>TICKETS (بلیت‌ها):</strong> بسته‌های بلیت تعریف‌شده برای یک مسابقه با قیمت مشخص و ظرفیت باقیمانده[cite: 4].</li>
+            <li><strong>SEATS (صندلی‌ها/جایگاه‌ها):</strong> شماره دقیق صندلی و ردیف جهت امکان رزرو صندلی مشخص و جلوگیری از فروش تکراری[cite: 4].</li>
+            <li><strong>FACILITIES (امکانات جانبی) & FACILITIES_TICKET:</strong> مدیریت امکانات جانبی (پارکینگ، پذیرایی) و شکستن رابطه چندبه‌چند (M:N) برای رعایت 1NF[cite: 4].</li>
+            <li><strong>DETAILS_FOOTBALL / VOLLEYBALL / BASKETBALL:</strong> پیاده‌سازی الگوی Polymorphism در 3NF؛ جداسازی ویژگی‌های خاص هر ورزش (مانند شماره گیت فوتبال یا فودکورت بسکتبال) جهت پر نشدن جدول اصلی بلیت با ستون‌های NULL[cite: 4].</li>
+        </ul>
+
+        <h3>۲.۵. فرآیند رزرو، پرداخت، کنسلی و پشتیبانی</h3>
+        <ul>
+            <li><strong>RESERVATIONS (رزروها):</strong> درخواست اولیه خرید شامل تعداد بلیت، مبلغ کل، وضعیت و مهلت رزرو موقت (reserved_until)[cite: 4].</li>
+            <li><strong>SEATS_RESERVED (صندلی‌های قفل‌شده):</strong> مدیریت همزمانی (Concurrency Control) جهت جلوگیری از انتخاب همزمان یک صندلی توسط دو کاربر[cite: 4].</li>
+            <li><strong>PAYMENTS (پرداخت‌ها):</strong> ثبت رسمی کدهای پیگیری، زمان و وضعیت پرداخت درگاه[cite: 4].</li>
+            <li><strong>POLICIES_CANCELLATION & RULES_POLICY_CANCELLATION:</strong> تعاریف قوانین استرداد و درصدهای جریمه بر اساس بازه زمانی مانده تا بازی[cite: 4].</li>
+            <li><strong>REQUESTS_CANCELLATION & REFUNDS:</strong> ثبت درخواست کنسلی، بررسی پشتیبان و صدور سند عودت وجه به کیف پول[cite: 4].</li>
+            <li><strong>CATEGORIES_REPORT & REPORTS:</strong> دسته‌بندی و ثبت شکایات و گزارش‌های فنی/استادیومی تماشاگران[cite: 4].</li>
+        </ul>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec-phase2">
+        <h2>۳. فاز دوم: بهینه‌سازی دیتابیس، پروسجرها و ایندکس‌گذاری</h2>
+        <p>
+            در فاز دوم، تمرکز اصلی بر انتقال منطق‌های پیچیده دیتابیس به داخل PostgreSQL، افزایش سرعت اجرای کوئری‌ها و اطمینان از صحت داده‌ها در محیط ابری Neon.tech بوده است.
+        </p>
+
+        <h3>۳.۱. توابع و Stored Procedureها</h3>
+        <p>
+            به منظور افزایش امنیت و جلوگیری از ارسال کوئری‌های خام سنگین از سمت بک‌اند، پروسجرهای کلیدی پیاده‌سازی شدند:
+        </p>
+        <ul>
+            <li><strong>`sp_get_purchased_tickets_by_city`:</strong> بازیابی سوابق بلیت‌های خریداری‌شده توسط کاربر به همراه تفکیک شهر و اطلاعات کامل ورزشگاه.</li>
+            <li><strong>پروسجرهای محاسبه جریمه کنسلی:</strong> محاسبه هوشمند میزان جریمه بر اساس زمان فعلی و جدول `RULES_POLICY_CANCELLATION`.</li>
+            <li><strong>پروسجر نهایی‌سازی پرداخت:</strong> ثبت همزمان پرداخت، تغییر وضعیت صندلی و بروزرسانی کیف پول در قالب یک Transaction یکپارچه.</li>
+        </ul>
+
+        <h3>۳.۲. استراتژی ایندکس‌گذاری (Indexing)</h3>
+        <p>
+            برای بهینه‌سازی کوئری‌های پرکاربرد، ایندکس‌های زیر روی دیتابیس PostgreSQL اعمال گردید:
+        </p>
+        <ul>
+            <li><strong>B-Tree Composite Index روی جدول `MATCHES`:</strong> ترکیب ستون‌های `(start_time, venue_id)` جهت سرعت‌بخشی به لیست‌کردن بازی‌های فعال یک استادیوم.</li>
+            <li><strong>Index روی کلیدهای خارجی:</strong> ایندکس‌گذاری کلیدهای خارجی `user_id` در `RESERVATIONS` و `TRANSACTIONS_WALLET` جهت افزایش سرعت JOINها.</li>
+            <li><strong>Unique Index روی `SEATS_RESERVED`:</strong> تضمین قطعی سطح دیتابیس برای جلوگیری از رزرو همزمان یک صندلی در حالت رزرو موقت.</li>
+        </ul>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec-phase3">
+        <h2>۴. فاز سوم: توسعه سرویس بک‌اند (FastAPI)، Redis و امنیت</h2>
+        <p>
+            فاز سوم شامل توسعه سرویس بک‌اند ناهمگام (Async) با پریمورک <strong>FastAPI</strong> است[cite: 5]. طبق الزامات پروژه، از ORM استفاده نشده و تمام ارتباطات دیتابیس با Raw SQL ناهمگام (AsyncPG) به همراه Connection Pooling مدیریت می‌شوند[cite: 5].
+        </p>
+
+        <h3>۴.۱. معماری ماژولار پروژه (core/app)</h3>
+        <ul>
+            <li><strong>`core/config.py`:</strong> مدیریت مرکزی تنظیمات پروژه با Pydantic Settings[cite: 5].</li>
+            <li><strong>`core/database.py`:</strong> مدیریت پادمان و Connection Pool ناهمگام PostgreSQL[cite: 5].</li>
+            <li><strong>`core/client_redis.py` & `utils_cache.py`:</strong> اتصال به Upstash Redis، اعمال کلیدهای کش و توابع Cache Invalidation[cite: 5].</li>
+            <li><strong>`core/security.py` & `dependencies.py`:</strong> هشینگ Bcrypt، مدیریت توکن‌های JWT و تزریق وابستگی‌های RBAC[cite: 5].</li>
+            <li><strong>`sync_tickets.py`:</strong> همگام‌سازی ناهمگام داده‌های بلیت در Elasticsearch[cite: 5].</li>
+        </ul>
+
+        <h3>۴.۲. کاتالوگ APIهای توسعه‌یافته</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ماژول / مسیر</th>
+                    <th>متد</th>
+                    <th>عنوان API</th>
+                    <th>نحوه عملکرد و تکنولوژی‌های درگیر</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>`/auth/otp/send`</td>
+                    <td><span class="badge badge-post">POST</span></td>
+                    <td>ارسال کد OTP</td>
+                    <td>تولید کد ۵ رقمی تصادفی و ذخیره در Redis با TTL برابر ۵ دقیقه[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/auth/otp/verify`</td>
+                    <td><span class="badge badge-post">POST</span></td>
+                    <td>تأیید کد OTP</td>
+                    <td>مقایسه کد ارسالی کاربر با مقدار ذخیره‌شده در Redis[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/auth/signup`</td>
+                    <td><span class="badge badge-post">POST</span></td>
+                    <td>ثبت‌نام کاربر</td>
+                    <td>هش رمز عبور با Bcrypt، درج در PostgreSQL و صدور JWT[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/auth/login`</td>
+                    <td><span class="badge badge-post">POST</span></td>
+                    <td>ورود به سیستم</td>
+                    <td>اعتبارسنجی نام کاربری/رمز و صدور JWT Bearer Token[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/users/me`</td>
+                    <td><span class="badge badge-get">GET</span></td>
+                    <td>دریافت پروفایل</td>
+                    <td>خواندن از کش Redis (Cache-Aside)؛ در صورت Cache Miss، استعلام از دیتابیس[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/users/me`</td>
+                    <td><span class="badge badge-put">PUT</span></td>
+                    <td>ویرایش پروفایل</td>
+                    <td>بروزرسانی دیتابیس و پاکسازی صریح (Invalidation) کش کاربر در Redis[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/venues/cities`</td>
+                    <td><span class="badge badge-get">GET</span></td>
+                    <td>شهرهای دارای ورزشگاه</td>
+                    <td>استعلام لیست شهرها همراه با کشینگ جهت کاهش بار دیتابیس[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/tickets`</td>
+                    <td><span class="badge badge-get">GET</span></td>
+                    <td>جستجو و فیلتر بلیت</td>
+                    <td>اجرای کوئری متنی و فیلتر چندبعدی روی شاخص Elasticsearch[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/tickets/{id}`</td>
+                    <td><span class="badge badge-get">GET</span></td>
+                    <td>جزئیات بلیت</td>
+                    <td>دریافت مشخصات کامل مسابقه، صندلی‌ها و ویژگی‌های اختصاصی ورزش[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/reservations`</td>
+                    <td><span class="badge badge-post">POST</span></td>
+                    <td>رزرو موقت بلیت</td>
+                    <td>ایجاد قفل موقت روی صندلی در Redis با TTL برابر ۱۰ دقیقه (`SETNX`) جهت جلوگیری از Overbooking[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/reservations/{id}/pay`</td>
+                    <td><span class="badge badge-post">POST</span></td>
+                    <td>نهایی‌سازی پرداخت</td>
+                    <td>بررسی قفل، کسر از کیف پول یا درگاه، ثبت قطعی در PostgreSQL و سنک با Elasticsearch[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/reservations/me`</td>
+                    <td><span class="badge badge-get">GET</span></td>
+                    <td>تاریخچه خریدها</td>
+                    <td>فراخوانی Stored Procedure بلیت‌های خریداری‌شده کاربر[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/cancellations/penalty-check`</td>
+                    <td><span class="badge badge-get">GET</span></td>
+                    <td>پیش‌نمایش جریمه</td>
+                    <td>محاسبه درصد جریمه بر اساس زمان باقیمانده تا مسابقه[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/reservations/{id}/cancel`</td>
+                    <td><span class="badge badge-post">POST</span></td>
+                    <td>ثبت کنسلی و استرداد</td>
+                    <td>تغییر وضعیت رزرو، عودت وجه پس از کسر جریمه به کیف پول و آزادکننده صندلی[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/reports`</td>
+                    <td><span class="badge badge-post">POST</span></td>
+                    <td>ثبت گزارش مشکل</td>
+                    <td>ثبت اشکالات بلیت یا عدم تایید پرداخت جهت بررسی پشتیبانی[cite: 5].</td>
+                </tr>
+                <tr>
+                    <td>`/admin/reservations/flagged`</td>
+                    <td><span class="badge badge-get">GET</span></td>
+                    <td>رزروهای مشکوک</td>
+                    <td>استعلام رزروهای دارای رفتار مشکوک (مخصوص Admin/Support)[cite: 5].</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>۴.۳. امنیت و کنترل دسترسی (RBAC)</h3>
+        <p>
+            احراز هویت بر پایه **JWT** با الگوریتم `HMAC-SHA256` پیاده‌سازی شده است[cite: 5]. کنترل سطح دسترسی در فایل `dependencies.py` با متد `roles_check` انجام می‌شود که نقش‌های کاربر (`Customer`, `Support`, `Admin`) را ارزیابی کرده و در صورت عدم داشتن دسترسی لازم، خطای `HTTP 403 Forbidden` صادر می‌کند[cite: 5].
+        </p>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec-phase4">
+        <h2>۵. فاز چهارم: رابط کاربری (Frontend) و Elasticsearch</h2>
+        <p>
+            در فاز چهارم، یک رابط کاربری سبک، سریع و کاملاً Responsive با **Vanilla JavaScript (ES6+)**، HTML5 و CSS3 توسعه یافت تا بدون نیاز به فریم‌ورک‌های سنگین و فرآیندهای پیچیده Build، بالاترین کارایی را ارائه دهد[cite: 6].
+        </p>
+
+        <h3>۵.۱. ساختار فایل‌های فرانت‌اند</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>نام فایل</th>
+                    <th>نوع / دسته</th>
+                    <th>شرح وظیفه و نحوه عملکرد در پروژه</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>`js/api.js`</td>
+                    <td>JavaScript Module</td>
+                    <td>ماژول متمرکز شبکه: مدیریت Fetch، افزودن اتوماتیک توکن JWT، هدرها و پارس هوشمند خطاهای Pydantic/FastAPI[cite: 6].</td>
+                </tr>
+                <tr>
+                    <td>`index.html` / `search.js`</td>
+                    <td>HTML / JS</td>
+                    <td>صفحه اصلی و جستجو: ارسال فیلترهای ورودی کاربر به Elasticsearch و رندر دینامیک کارت‌های بلیت[cite: 6].</td>
+                </tr>
+                <tr>
+                    <td>`login.html` / `auth.js`</td>
+                    <td>HTML / JS</td>
+                    <td>ورود با رمز عبور و احراز هویت دومرحله‌ای OTP از طریق Redis[cite: 6].</td>
+                </tr>
+                <tr>
+                    <td>`signup.html` / `signup.js`</td>
+                    <td>HTML / JS</td>
+                    <td>ثبت‌نام کاربران جدید و هدایت اتوماتیک به صفحه ورود[cite: 6].</td>
+                </tr>
+                <tr>
+                    <td>`checkout.html` / `checkout.js`</td>
+                    <td>HTML / JS</td>
+                    <td>تکمیل رزرو، قفل صندلی، درخواست رمز پویا کارت بانکی و پرداخت نهایی[cite: 6].</td>
+                </tr>
+                <tr>
+                    <td>`profile.html` / `profile.js`</td>
+                    <td>HTML / JS</td>
+                    <td>داشبورد کاربر: مشاهده بلیت‌ها، استعلام جریمه کنسلی، ثبت کنسلی، ویرایش پروفایل و ثبت گزارش مشکل[cite: 6].</td>
+                </tr>
+                <tr>
+                    <td>`css/style.css`</td>
+                    <td>CSS3 Style</td>
+                    <td>استایلهای عمومی: متغیرهای رنگی، Grid CSS، Flexbox، کارت‌های بلیت، مدال‌ها و Responsive Design[cite: 6].</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>۵.۲. تحلیل ماژول شبکه (`js/api.js`)</h3>
+        <p>
+            این فایل الگوی **Singleton Client** را پیاده‌سازی کرده است[cite: 6]. مهم‌ترین ویژگی آن، استخراج دقیق پیام‌های خطای اعتبارسنجی (Validation Errors) در FastAPI است که معمولاً به صورت آرایه‌ای در `detail` بازمی‌گردند[cite: 6]:
+        </p>
+        <div class="code-block">
+// مدیریت هوشمند خطاهای Pydantic / FastAPI در api.js
+if (!response.ok) {
+    let errorMessage = `خطای سرور (کد ${response.status})`;
+    if (typeof data.detail === 'string') {
+        errorMessage = data.detail;
+    } else if (Array.isArray(data.detail)) {
+        errorMessage = data.detail.map(err => err.msg || 'خطای ورودی').join(' | ');
+    } else if (data.message) {
+        errorMessage = data.message;
+    }
+    throw new Error(errorMessage);
+}
+        </div>
+
+        <h3>۵.۳. یکپارچه‌سازی Elasticsearch 8.x</h3>
+        <p>
+            برای از بین بردن بار کوئری‌های سنگین متنی از روی دیتابیس PostgreSQL اصلی، Elasticsearch به عنوان موتور جستجو استفاده شد[cite: 6]:
+        </p>
+        <ul>
+            <li><strong>ایندکس‌گذاری خودکار (Pipeline Indexing):</strong> هنگام ثبت یا ویرایش مسابقه در PostgreSQL، داده‌های متنی (نام تیم‌ها، ورزشگاه، شهر و نوع ورزش) به Document در Elasticsearch تبدیل می‌شوند[cite: 6].</li>
+            <li><strong>کوئری‌های ترکیبی (Multi-Match & Range Filters):</strong> اجرای همزمان جستجوی متنی روی چند فیلد و اعمال فیلترهای دامنه قیمت و تاریخ با سرعت پاسخ‌دهی زیر چند میلی‌ثانیه[cite: 6].</li>
+            <li><strong>Offloading دیتابیس:</strong> حفظ کارایی دیتابیس PostgreSQL برای عملیات حیاتی مانند پردازش پرداخت و رزرو[cite: 6].</li>
+        </ul>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec-workflows">
+        <h2>۶. تحلیل جریان‌های کاری کلیدی (End-to-End Workflows)</h2>
+
+        <div class="callout">
+            <div class="callout-title">سناریوی ۱: جستجو، انتخاب صندلی و رزرو موقت</div>
+            <ol>
+                <li>کاربر نام تیم، شهر یا ورزش را در `index.html` وارد می‌کند[cite: 6].</li>
+                <li>فرانت‌اند درخواست را به متد `tickets.search` در `api.js` می‌فرستد که مستقیماً روی Elasticsearch اجرا می‌شود[cite: 6].</li>
+                <li>با انتخاب صندلی، بک‌اند با دستور `SETNX` صندلی را به مدت ۱۰ دقیقه در Redis قفل می‌کند تا فرد دیگری نتواند آن را انتخاب کند (جلوگیری از Overbooking)[cite: 5, 6].</li>
+            </ol>
+        </div>
+
+        <div class="callout">
+            <div class="callout-title">سناریوی ۲: نهایی‌سازی پرداخت و صدور بلیت</div>
+            <ol>
+                <li>کاربر به صفحه `checkout.html` منتقل شده و شماره کارت را وارد می‌کند[cite: 6].</li>
+                <li>با کلیک روی "درخواست رمز پویا"، کد یکبارمصرف شبیه‌سازی‌شده صادر می‌شود[cite: 6].</li>
+                <li>پس از تایید پرداخت، تراکنش مالی ثبت شده، وضعیت صندلی در PostgreSQL قطعی می‌گردد و کلید Redis پاکسازی می‌شود[cite: 5, 6].</li>
+            </ol>
+        </div>
+
+        <div class="callout">
+            <div class="callout-title">سناریوی ۳: استعلام جریمه کنسلی و عودت وجه به کیف پول</div>
+            <ol>
+                <li>کاربر در داشبورد خود (`profile.html`) روی بلیت خریداری‌شده دکمه استعلام کنسلی را کلیک می‌کند[cite: 6].</li>
+                <li>API مسیر `/cancellations/penalty-check` فاصله زمانی تا بازی را محاسبه کرده و درصد جریمه را نشان می‌دهد[cite: 5, 6].</li>
+                <li>پس از تایید کاربر، مبلغ پس از کسر جریمه به کیف پول عودت داده شده، صندلی در دیتابیس آزاد می‌شود و شاخص Elasticsearch بروز می‌گردد[cite: 5, 6].</li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec-conclusion">
+        <h2>۷. ارزیابی نهایی و دستاوردهای پروژه</h2>
+        <p>
+            پروژه <strong>BookingSportTickets</strong> با موفقیت تمامی اهداف آموزشی و فنی را محقق ساخت. ترکیبی از معماری دیتابیس نرمال‌سازی‌شده (3NF)، سرعت بالای FastAPI و Raw SQL، قابلیت مدیریت همزمانی با Redis، قدرت جستجوی Elasticsearch و چابکی فرانت‌اند Vanilla JS باعث گردید محصولی کامل، ایمن و آماده استقرار ارائه شود.
+        </p>
+        <div class="callout">
+            <div class="callout-title">خلاصه دستاوردهای کلیدی پروژه:</div>
+            <ul>
+                <li>طراحی ۳۰ جدول دیتابیس طبق استاندارد 3NF و الگوی Polymorphism برای رشته‌های ورزشی مختلف[cite: 4].</li>
+                <li>کاهش بار دیتابیس اصلی با بهره‌گیری از Cache-Aside در Redis و موتور Elasticsearch[cite: 5, 6].</li>
+                <li>حل کامل مشکل Overbooking با پیاده‌سازی قفل موقت ۱۰ دقیقه‌ای صندلی‌ها در Redis[cite: 5].</li>
+                <li>توسعه فرانت‌اند بدون وابستگی به فریم‌ورک‌های سنگین با زمان بارگذاری آنی و مدیریت متمرکز API[cite: 6].</li>
+            </ul>
+        </div>
+    </section>
+
+    <footer>
+        <p>گزارش نهایی پروژه درس مدیریت پایگاه داده و توسعه بک‌اند | تهیه شده توسط تیم سه نفره دانشجویی | مرداد ۱۴۰۵</p>
+    </footer>
+</div>
+
+</body>
+</html>
