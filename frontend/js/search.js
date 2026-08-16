@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadTickets(filters = {}) {
         ticketsContainer.innerHTML = '<p style="text-align:center; width:100%;">در حال جستجوی مسابقات...</p>';
         try {
-            // استفاده از API.tickets.search که شما نوشتید
             const tickets = await API.tickets.search(filters);
             
             if (!tickets || tickets.length === 0) {
@@ -32,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p><strong>ورزش:</strong> ${ticket.match.sport_type_name}</p>
                     <p><strong>ورزشگاه:</strong> ${ticket.match.venue_name} (${ticket.match.city_name || 'نامشخص'})</p>
                     <p><strong>تاریخ:</strong> ${new Date(ticket.match.match_datetime).toLocaleString('fa-IR')}</p>
+                     <p><strong>شروع قیمت از:</strong> ${Number(ticket.price).toLocaleString('fa-IR')} تومان</p>
 
                     <div class="ticket-actions">
                         <button class="btn btn-primary view-details-btn" data-id="${ticket.ticket_id}">مشاهده و رزرو</button>
@@ -75,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSelectedTicketId = ticketId;
 
         try {
-            // استفاده از API.tickets.getDetails که شما نوشتید
             const ticketDetail = await API.tickets.getDetails(ticketId);
             
             modalTitle.innerText = `${ticketDetail.match.home_team.name} - ${ticketDetail.match.away_team.name}`;
@@ -83,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p><strong>ورزش:</strong> ${ticketDetail.match.sport_type_name}</p>
                 <p><strong>ورزشگاه:</strong> ${ticketDetail.match.venue_name}</p>
                 <p><strong>زمان:</strong> ${new Date(ticketDetail.match.match_datetime).toLocaleString('fa-IR')}</p>
-
                 <p><strong>قیمت:</strong> ${Number(ticketDetail.price).toLocaleString('fa-IR')} تومان</p>
                 <p><strong>ظرفیت باقیمانده:</strong> ${ticketDetail.remaining_capacity} صندلی</p>
             `;
@@ -101,13 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
     reserveBtn.addEventListener('click', () => {
         if (!API.getToken()) {
             alert('برای رزرو بلیط ابتدا باید وارد سایت شوید.');
-            // در صورت نیاز ریدایرکت کنید
-            // window.location.href = 'login.html'; 
             return;
         }
         alert(`هدایت به فرآیند انتخاب صندلی برای بلیط شماره ${currentSelectedTicketId}`);
     });
 
-    // لود اولیه
+    // لود اولیه مسابقات
     loadTickets();
 });
