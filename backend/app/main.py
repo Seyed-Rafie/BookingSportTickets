@@ -1,3 +1,4 @@
+# In the name of GOD
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware  # ۱. اضافه شدن اینپورت CORS
 

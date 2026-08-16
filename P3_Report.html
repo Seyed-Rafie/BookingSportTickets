@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گزارش معماری و APIهای فاز ۳ - سامانه رزرو بلیط مسابقات ورزشی</title>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+        
+        :root {
+            --primary: #1e293b;
+            --primary-light: #334155;
+            --accent: #2563eb;
+            --accent-light: #eff6ff;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.7;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #38bdf8;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #94a3b8;
+        }
+
+        .badge-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 22px;
+            background-color: var(--accent);
+            border-radius: 4px;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .tech-item {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 16px;
+            border-right: 4px solid var(--accent);
+        }
+
+        .tech-item h3 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        .tech-item p {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: right;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .get { background-color: #dbeafe; color: #1e40af; }
+        .post { background-color: #dcfce7; color: #166534; }
+        .put { background-color: #fef3c7; color: #92400e; }
+        .delete { background-color: #fee2e2; color: #991b1b; }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #0f172a;
+            font-size: 0.9em;
+            direction: ltr;
+            display: inline-block;
+        }
+
+        .module-section {
+            margin-bottom: 25px;
+        }
+
+        .module-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flow-box {
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .flow-box h4 {
+            color: #6b21a8;
+            margin-bottom: 8px;
+        }
+
+        ul, ol {
+            padding-right: 20px;
+            margin-bottom: 10px;
+        }
+
+        li {
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+
+        li strong {
+            color: var(--text-main);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 30px;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>گزارش فنی معماری و APIهای فاز سوم</h1>
+        <p>پروژه سامانه جامع رزرو و خرید بلیط مسابقات ورزشی (BookingSportTickets)</p>
+        <div class="badge-group">
+            <span class="badge">FastAPI (ASGI)</span>
+            <span class="badge">PostgreSQL (Neon.tech - Raw SQL)</span>
+            <span class="badge">Upstash Redis (Caching & TTL)</span>
+            <span class="badge">Elasticsearch (Async Indexing)</span>
+            <span class="badge">JWT & RBAC Security</span>
+        </div>
+    </header>
+
+    <!-- خلاصه اجرایی -->
+    <div class="card">
+        <h2>۱. هدف و خلاصه اجرایی فاز سوم</h2>
+        <p>
+            هدف اصلی از فاز سوم پروژه، پیاده‌سازی سرویس بک‌اند مدرن، مقیاس‌پذیر و با کارایی بالا (High Performance) بر پایه <strong>FastAPI</strong> است. در این فاز، تمامی منطق‌های کسب‌وکار از جمله احراز هویت با کد یک‌بارمصرف (OTP)، مدیریت نشست‌ها، جستجو و فیلتر پیشرفته بلیط‌ها، قفل موقت صندلی‌ها جهت جلوگیری از Overbooking، پردازش پرداخت، مدیریت جریمه کنسلی و پنل پشتیبانی/مدیریت پیاده‌سازی شده‌اند.
+        </p>
+    </div>
+
+    <!-- پشته فناوری و دلایل انتخاب -->
+    <div class="card">
+        <h2>۲. پشته فناوری (Tech Stack) و علل انتخاب</h2>
+        <div class="tech-grid">
+            <div class="tech-item">
+                <h3>FastAPI & Pydantic</h3>
+                <p>عملکرد Asynchronous فوق‌العاده بالا بر پایه Starlette، اعتبارسنجی دقیق و خودکار ورودی/خروجی‌ها با Pydantic Schemas، و تولید خودکار مستندات OpenAPI / Swagger.</p>
+            </div>
+            <div class="tech-item">
+                <h3>PostgreSQL & Raw SQL</h3>
+                <p>عدم استفاده از ORM طبق الزامات پروژه جهت بهینه‌سازی مستقیم کوئری‌ها، بهره‌گیری از Stored Procedureهای نوشته‌شده در فاز ۲ و کنترل دقیق اتصال ناهمگام (AsyncPG).</p>
+            </div>
+            <div class="tech-item">
+                <h3>Upstash Redis</h3>
+                <p>ذخیره‌سازی کدهای OTP با اعتبار زمان‌دار (TTL)، مدیریت قفل موقت رزروها (۱۰ دقیقه مهلت پرداخت) و کش کردن استعلام‌های پرتکرار (شهرها، ورزشگاه‌ها و پروفایل).</p>
+            </div>
+            <div class="tech-item">
+                <h3>Elasticsearch</h3>
+                <p>نمایه‌سازی (Indexing) ناهمگام بلیط‌ها برای امکان جستجوی متنی فوق‌سریع و فیلترهای چندبعدی (ورزش، تاریخ، قیمت) بدون اعمال فشار به دیتابیس اصلی.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ساختار ماژولار و هسته سیستم -->
+    <div class="card">
+        <h2>۳. ساختار ماژولار و ماژول‌های هسته (app.core)</h2>
+        <p style="margin-bottom: 15px;">ساختار پروژه با رعایت دقیق اصل تفکیک مسئولیت‌ها (Separation of Concerns) به سه لایه اصلی تقسیم شده است:</p>
+        
+        <div class="module-section">
+            <div class="module-title">📁 ماژول‌های هسته (app/core)</div>
+            <ul>
+                <li><code>config.py</code>: مدیریت مرکزی تنظیمات و متغیرهای محیطی با استفاده از <code>pydantic-settings</code>.</li>
+                <li><code>database.py</code>: مدیریت پادمان و Connection Pool ناهمگام دیتابیس PostgreSQL.</li>
+                <li><code>redis_client.py</code> & <code>cache_utils.py</code>: اتصال به Redis، تعریف کلیدواژه‌های کش، و توابع پاک‌سازی کش (Cache Invalidation).</li>
+                <li><code>elasticsearch.py</code> & <code>sync_tickets.py</code>: پیکربندی AsyncElasticsearch و توابع همگام‌سازی ناهمگام داده‌های بلیط.</li>
+                <li><code>security.py</code>: هش کردن کلمات عبور با الگوریتم Bcrypt، تولید و اعتبارسنجی توکن‌های JWT Access Token.</li>
+                <li><code>dependencies.py</code>: تزریق وابستگی (Dependency Injection) برای استخراج کاربر جاری و اعمال سطح دسترسی نقش‌ها (RBAC).</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- جدول جامع APIها -->
+    <div class="card">
+        <h2>۴. کاتالوگ و تشریح کارکرد APIها (Endpoints)</h2>
+        <p style="margin-bottom: 15px;">جدول زیر تمامی مسیرهای پیاده‌سازی‌شده در سرویس بک‌اند، فایل مربوطه، نحوه عمل و تکنولوژی‌های درگیر را نشان می‌دهد:</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ماژول / مسیر</th>
+                    <th>متد</th>
+                    <th>عنوان API</th>
+                    <th>نحوه عملکرد و جزئیات پیاده‌سازی</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Auth -->
+                <tr>
+                    <td><code>routers/auth.py</code><br><code>/auth/otp/send</code></td>
+                    <td><span class="method post">POST</span></td>
+                    <td>ارسال کد OTP</td>
+                    <td>تولید کد ۵ رقمی تصادفی و ذخیره در Redis با TTL برابر ۵ دقیقه به همراه شماره موبایل کاربر.</td>
+                </tr>
+                <tr>
+                    <td><code>routers/auth.py</code><br><code>/auth/otp/verify</code></td>
+                    <td><span class="method post">POST</span></td>
+                    <td>تأیید کد OTP</td>
+                    <td>مقایسه کد ارسالی کاربر با مقدار ذخیره‌شده در Redis و تایید صحت احراز هویت.</td>
+                </tr>
+                <tr>
+                    <td><code>routers/auth.py</code><br><code>/auth/signup</code></td>
+                    <td><span class="method post">POST</span></td>
+                    <td>ثبت‌نام کاربر</td>
+                    <td>هش کردن رمز عبور با Bcrypt، درج کاربر در PostgreSQL، و صدور توکن JWT.</td>
+                </tr>
+                <tr>
+                    <td><code>routers/auth.py</code><br><code>/auth/login</code></td>
+                    <td><span class="method post">POST</span></td>
+                    <td>ورود به سیستم</td>
+                    <td>اعتبارسنجی نام کاربری/رمز عبور و صدور Bearer JWT Access Token.</td>
+                </tr>
+
+                <!-- Users -->
+                <tr>
+                    <td><code>routers/users.py</code><br><code>/users/me</code></td>
+                    <td><span class="method get">GET</span></td>
+                    <td>دریافت پروفایل</td>
+                    <td>ابتدا از کش Redis خوانده می‌شود؛ در صورت عدم وجود (Cache Miss) از PostgreSQL استعلام و در کش ذخیره می‌گردد.</td>
+                </tr>
+                <tr>
+                    <td><code>routers/users.py</code><br><code>/users/me</code></td>
+                    <td><span class="method put">PUT</span></td>
+                    <td>ویرایش پروفایل</td>
+                    <td>به‌روزرسانی داده‌ها در دیتابیس و پاک‌سازی صریح کش پروفایل کاربر در Redis (Invalidation).</td>
+                </tr>
+
+                <!-- Venues -->
+                <tr>
+                    <td><code>routers/venues.py</code><br><code>/venues/cities</code></td>
+                    <td><span class="method get">GET</span></td>
+                    <td>لیست شهرها و ورزشگاه‌ها</td>
+                    <td>استعلام لیست شهرهای دارای ورزشگاه همراه با Cache-Aside در Redis جهت کاهش بار دیتابیس.</td>
+                </tr>
+
+                <!-- Tickets -->
+                <tr>
+                    <td><code>routers/tickets.py</code><br><code>/tickets</code></td>
+                    <td><span class="method get">GET</span></td>
+                    <td>جستجو و فیلتر بلیط‌ها</td>
+                    <td>اجرای کوئری‌های فیلتر متنی/رنگ/قیمت/ورزش بر روی نمایه Elasticsearch برای پاسخ‌دهی میلی‌ثانیه‌ای.</td>
+                </tr>
+                <tr>
+                    <td><code>routers/tickets.py</code><br><code>/tickets/{id}</code></td>
+                    <td><span class="method get">GET</span></td>
+                    <td>جزئیات بلیط ورزشی</td>
+                    <td>دریافت مشخصات کامل مسابقه، صندلی‌های باقیمانده و ویژگی‌های اختصاصی (فوتبال/والیبال/بسکتبال).</td>
+                </tr>
+
+                <!-- Reservations -->
+                <tr>
+                    <td><code>routers/reservations.py</code><br><code>/reservations</code></td>
+                    <td><span class="method post">POST</span></td>
+                    <td>رزرو موقت بلیط</td>
+                    <td>ایجاد قفل موقت روی صندلی در Redis با TTL برابر ۱۰ دقیقه برای جلوگیری از رزرو همزمان (Overbooking).</td>
+                </tr>
+                <tr>
+                    <td><code>routers/reservations.py</code><br><code>/reservations/{id}/pay</code></td>
+                    <td><span class="method post">POST</span></td>
+                    <td>نهایی‌سازی پرداخت</td>
+                    <td>بررسی قفل موقت، کسر از کیف پول یا درگاه mock، ثبت نهایی خرید در PostgreSQL و همگام‌سازی با Elasticsearch.</td>
+                </tr>
+                <tr>
+                    <td><code>routers/reservations.py</code><br><code>/reservations/me</code></td>
+                    <td><span class="method get">GET</span></td>
+                    <td>تاریخچه خریدهای کاربر</td>
+                    <td>فراخوانی Stored Procedure مربوط به بلیط‌های خریداری شده کاربر به همراه جزئیات وضعیت.</td>
+                </tr>
+
+                <!-- Cancellations -->
+                <tr>
+                    <td><code>routers/cancellations.py</code><br><code>/cancellations/penalty-check</code></td>
+                    <td><span class="method get">GET</span></td>
+                    <td>پیش‌نمایش جریمه کنسلی</td>
+                    <td>محاسبه درصد جریمه بر اساس زمان باقیمانده تا شروع مسابقه (قوانین استرداد).</td>
+                </tr>
+                <tr>
+                    <td><code>routers/cancellations.py</code><br><code>/reservations/{id}/cancel</code></td>
+                    <td><span class="method post">POST</span></td>
+                    <td>ثبت کنسلی و استرداد</td>
+                    <td>تغییر وضعیت رزرو، عودت مبلغ پس از کسر جریمه به کیف پول کاربر و آزادکننده صندلی در دیتابیس و Elasticsearch.</td>
+                </tr>
+
+                <!-- Reports -->
+                <tr>
+                    <td><code>routers/reports.py</code><br><code>/reports</code></td>
+                    <td><span class="method post">POST</span></td>
+                    <td>ثبت گزارش مشکل</td>
+                    <td>ثبت اشکالات مربوط به بلیط یا عدم تایید پرداخت توسط کاربر جهت بررسی توسط پشتیبانی.</td>
+                </tr>
+
+                <!-- Admin -->
+                <tr>
+                    <td><code>routers/admin.py</code><br><code>/admin/reservations/flagged</code></td>
+                    <td><span class="method get">GET</span></td>
+                    <td>شناسایی رزروهای مشکوک</td>
+                    <td>استعلام رزروهایی که رفتارهای مشکوک یا چندباره داشته‌اند (نیاز به دسترسی نقش Admin/Support).</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- جریان‌های کاری کلیدی -->
+    <div class="card">
+        <h2>۵. جریان‌های کاری کلیدی (Workflows)</h2>
+        
+        <div class="flow-box">
+            <h4>🔄 الگوی رزرو موقت و پرداخت بدون Overbooking</h4>
+            <ol>
+                <li>کاربر درخواست رزرو بلیط را ارسال می‌کند.</li>
+                <li>سرویس بک‌اند با دستور <code>SETNX</code> در Redis صندلی را به مدت ۱۰ دقیقه به نام کاربر قفل می‌کند.</li>
+                <li>در صورت موفقیت‌آمیز بودن پرداخت در مهلت مقرر، خرید در PostgreSQL ثبت شده و وضعیت صندلی قطعی می‌گردد.</li>
+                <li>در صورت انقضای زمان (Expiration) یا انصراف، کلید Redis منقضی شده و صندلی برای سایر کاربران آزاد می‌شود.</li>
+            </ol>
+        </div>
+
+        <div class="flow-box" style="background: #f0fdf4; border-color: #bbf7d0; margin-top: 15px;">
+            <h4 style="color: #166534;">⚡ استراتژی مدیریت کش و Invalidation</h4>
+            <p style="color: #166534; font-size: 0.95rem;">
+                از الگوی <strong>Cache-Aside</strong> استفاده شده است. هنگام درخواست‌های GET (مانند لیست شهرها یا پروفایل)، ابتدا کش Redis بررسی می‌شود. در صورتی که عملیات تغییر داده (PUT/POST/DELETE) انجام شود، تابع <code>invalidate_cache()</code> فراخوانی شده و کلیدهای مربوطه در Redis بلافاصله پاک می‌شوند تا داده‌های قدیمی به کاربر نمایش داده نشوند.
+            </p>
+        </div>
+    </div>
+
+    <!-- امنیت -->
+    <div class="card">
+        <h2>۶. امنیت و کنترل دسترسی (RBAC)</h2>
+        <p>
+            احراز هویت بر پایه <strong>JSON Web Token (JWT)</strong> با الگوریتم HMAC-SHA256 انجام می‌پذیرد. توکن در هدر <code>Authorization: Bearer &lt;token&gt;</code> ارسال می‌شود.
+            کنترل سطح دسترسی در فایل <code>dependencies.py</code> با متد <code>check_roles</code> پیاده‌سازی شده است که نقش‌های کاربر (Customer, Support, Admin) را ارزیابی کرده و در صورت عدم داشتن دسترسی لازم، خطای HTTP 403 Forbidden صادر می‌کند.
+        </p>
+    </div>
+
+    <footer>
+        <p>پروژه پایانی درس مدیریت دیتابیس و بک‌اند | فاز ۳ - توسعه FastAPI</p>
+    </footer>
+</div>
+
+</body>
+</html>
