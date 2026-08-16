@@ -32,7 +32,7 @@ class VerifyOTPResponse(BaseModel):
 
 class LoginRequest(BaseModel):
     identifier: str = Field(..., description="User email or phone number", example="09120000001")
-    password: str = Field(..., description="user password", example="123abc")
+    password: str = Field(..., description="user password", example="123456")
 
 class LoginResponse(BaseModel):
     message: str
@@ -45,7 +45,7 @@ class SignupRequest(BaseModel):
     last_name: str = Field(..., min_length=2, example="Rezaei")
     email: Optional[EmailStr] = Field(None, example="ali@example.com")
     phone: Optional[str] = Field(None, example="09121112233")
-    password: str = Field(..., min_length=6, example="SecretPassword123")
+    password: str = Field(..., min_length=6, example="123456")
     role_id: int = Field("2", example="1")  # Default role is Customer; 1:Admin, 2:Customer, 3:Support
 
 class SignupResponse(BaseModel):
