@@ -3,10 +3,10 @@ from typing import Optional
 
 class SendOTPRequest(BaseModel):
     # Input identifier can be phone number or email string
-    identifier: str = Field(..., description="User email or phone number", example="09120000001 or abc@example.com")
+    identifier: str = Field(..., description="User email or phone number", example="09120000001")
 
 class VerifyOTPRequest(BaseModel):
-    identifier: str = Field(..., description="User email or phone number", example="09120000001 or abc@example.com")
+    identifier: str = Field(..., description="User email or phone number", example="09120000001")
     code: str = Field(..., min_length=4, max_length=6, description="OTP code received", example="123456")
 
 class SendOTPResponse(BaseModel):
@@ -31,8 +31,8 @@ class VerifyOTPResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    identifier: str = Field(..., description="User email or phone number", example="09120000001 or abc@example.com")
-    password: str = Field(..., description="user password", examples="123abc")
+    identifier: str = Field(..., description="User email or phone number", example="09120000001")
+    password: str = Field(..., description="user password", example="123abc")
 
 class LoginResponse(BaseModel):
     message: str
