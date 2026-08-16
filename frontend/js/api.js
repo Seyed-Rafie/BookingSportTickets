@@ -158,7 +158,7 @@ const API = {
             request('/venues', { method: 'GET' }),
     }, 
 
-    // -------------------------------------------------------------
+   // -------------------------------------------------------------
     // ۴. رزرو، پرداخت و کنسلی
     // -------------------------------------------------------------
     reservations: {
@@ -172,11 +172,19 @@ const API = {
         getMyReservations: () => 
             request('/reservations/me', { method: 'GET' }),
 
+        // اصلاح شد: شناسه رزرو به صورت مستقیم در مسیر (Path) قرار گرفت
         checkPenalty: (reservationId) => 
-            request(`/cancellations/penalty-check?reservation_id=${reservationId}`, { method: 'GET' }),
+            request(`/cancellations/penalty-check/${reservationId}`, { method: 'GET' }),
 
+        // اصلاح شد: آدرس به /cancellations/request تغییر کرد و اطلاعات به صورت Body ارسال می‌شود
         cancel: (reservationId) => 
-            request(`/reservations/${reservationId}/cancel`, { method: 'POST' }),
+            request('/cancellations/request', { 
+                method: 'POST',
+                body: { 
+                    reservation_id: parseInt(reservationId),
+                    user_note: "درخواست لغو از طریق پنل کاربری" // ارسال یادداشت پیش‌فرض برای بک‌اند
+                }
+            }),
 
         // درخواست رمز پویا (OTP) برای پرداخت
         requestOtp: (reservationId, cardNumber) =>
@@ -192,7 +200,6 @@ const API = {
                 body: paymentData
             }),
     },
-
     // -------------------------------------------------------------
     // ۵. پشتیبانی و گزارش‌ها
     // -------------------------------------------------------------
