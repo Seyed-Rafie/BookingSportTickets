@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional, List
 from app.schemas.admin import ReportResponseUpdate, ReservationStatusUpdate, AdminReportResponse
 from app.schemas.ticket import TicketSummarySchema, CreateTicketRequest, MatchSchema
+from app.schemas.cancellation import CancellationRequestSummaryResponse, CancellationRequestDetailResponse, CancellationRequestReviewInput
 from app.core.dependencies import get_current_support_user
 from app.core.database import execute_query
 from app.core.dependencies import get_current_admin_user
@@ -193,3 +194,172 @@ async def create_ticket(
             "status": enriched_data.get("match_status", "")
         }
     )   
+
+# ---------------------------------------------------------
+# API 1: GET LIST OF CANCELLATION REQUESTS (WITH STATUS FILTER)
+# ---------------------------------------------------------
+@router.get(
+    "/cancellation-requests", 
+    response_model=List[CancellationRequestSummaryResponse],
+    status_code=status.HTTP_200_OK
+)
+def get_cancellation_requests(
+    status_filter: Optional[str] = Query(None, alias="status", description="Filter by: pending, approved, rejected"),
+    support_user: dict = Depends(get_current_support_user)
+):
+    """
+    API 1: Retrieve summary list of all cancellation/change-seat requests.
+    Supports optional status filtering (pending, approved, rejected).
+    """
+    if status_filter:
+        query = """
+            SELECT 
+                request_id, 
+                reservation_id, 
+                user_id, 
+                request_type, 
+                status, 
+                reviewed_by_support_id, 
+                requested_new_seat_id, 
+                user_note, 
+                admin_note, 
+                requested_at
+            FROM cancellation_requests
+            WHERE status = %s
+            ORDER BY requested_at DESC;
+        """
+        results = execute_query(query, (status_filter.strip(),), fetch_all=True)
+    else:
+        query = """
+            SELECT 
+                request_id, 
+                reservation_id, 
+                user_id, 
+                request_type, 
+                status, 
+                reviewed_by_support_id, 
+                requested_new_seat_id, 
+                user_note, 
+                admin_note, 
+                requested_at
+            FROM cancellation_requests
+            ORDER BY requested_at DESC;
+        """
+        results = execute_query(query, fetch_all=True)
+
+    return results or []
+
+# ---------------------------------------------------------
+# API 2: GET DETAILED CANCELLATION REQUEST BY ID
+# ---------------------------------------------------------
+@router.get(
+    "/cancellation-requests/{request_id}",
+    response_model=CancellationRequestDetailResponse,
+    status_code=status.HTTP_200_OK
+)
+def get_cancellation_request_detail(
+    request_id: int,
+    support_user: dict = Depends(get_current_support_user)
+):
+    """
+    API 2: Retrieve full details of a specific cancellation or seat-change request.
+    Includes current status of the associated reservation for admin context.
+    """
+    query = """
+        SELECT 
+            cr.request_id, 
+            cr.reservation_id, 
+            cr.user_id, 
+            cr.request_type, 
+            cr.status, 
+            cr.reviewed_by_support_id, 
+            cr.requested_new_seat_id, 
+            cr.user_note, 
+            cr.admin_note, 
+            cr.requested_at,
+            r.status AS reservation_status
+        FROM cancellation_requests cr
+        LEFT JOIN reservations r ON cr.reservation_id = r.reservation_id
+        WHERE cr.request_id = %s
+        LIMIT 1;
+    """
+    request_detail = execute_query(query, (request_id,), fetch_one=True)
+
+    if not request_detail:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cancellation request not found."
+        )
+
+    return request_detail
+
+# ---------------------------------------------------------
+# API 3: REVIEW AND RESPOND TO CANCELLATION REQUEST (PATCH)
+# ---------------------------------------------------------
+@router.patch(
+    "/cancellation-requests/{request_id}",
+    response_model=CancellationRequestDetailResponse,
+    status_code=status.HTTP_200_OK
+)
+def review_cancellation_request(
+    request_id: int,
+    payload: CancellationRequestReviewInput,
+    support_user: dict = Depends(get_current_support_user)
+):
+    """
+    API 3: Admin responds to a cancellation/change-seat request (Approve or Reject).
+    Updates request status, records support admin ID, and updates associated reservation if approved.
+    """
+    # 1. بررسی وجود درخواست و معتبر بودن وضعیت فعلی آن
+    check_query = """
+        SELECT request_id, reservation_id, request_type, status, requested_new_seat_id
+        FROM cancellation_requests
+        WHERE request_id = %s
+        LIMIT 1;
+    """
+    existing_request = execute_query(check_query, (request_id,), fetch_one=True)
+
+    if not existing_request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cancellation request not found."
+        )
+
+    if existing_request['status'] != 'pending':
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"This request has already been processed with status '{existing_request['status']}'."
+        )
+
+    support_id = support_user.get("user_id") or support_user.get("id")
+
+    # 2. بروزرسانی جدول CANCELLATION_REQUESTS
+    update_request_query = """
+        UPDATE cancellation_requests
+        SET 
+            status = %s,
+            admin_note = %s,
+            reviewed_by_support_id = %s
+        WHERE request_id = %s;
+    """
+    execute_query(
+        update_request_query, 
+        (payload.status, payload.admin_note, support_id, request_id),
+        commit=True
+    )
+
+    # 3. اعمال تغییرات روی جدول RESERVATIONS در صورت تایید (Approved)
+    reservation_id = existing_request['reservation_id']
+    if payload.status == 'approved':
+        if existing_request['request_type'] == 'cancel':
+            # لغو رزرو
+            update_res_query = "UPDATE reservations SET status = 'cancelled' WHERE reservation_id = %s;"
+            execute_query(update_res_query, (reservation_id,), commit=True)
+            
+        elif existing_request['request_type'] == 'change_seat' and existing_request['requested_new_seat_id']:
+            # تغییر صندلی رزرو
+            update_seat_query = "UPDATE reservations SET seat_id = %s WHERE reservation_id = %s;"
+            execute_query(update_seat_query, (existing_request['requested_new_seat_id'], reservation_id), commit=True)
+
+    # 4. دریافت و بازگرداندن نتیجه نهایی
+    return get_cancellation_request_detail(request_id=request_id, support_user=support_user)
