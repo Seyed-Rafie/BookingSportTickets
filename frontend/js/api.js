@@ -100,8 +100,12 @@ const API = {
      auth: {
         sendOTP: (payload) => 
             request('/auth/send-otp', { method: 'POST', body: normalizeOtpPayload(payload) }),
+        sendOtp: (payload) => 
+            request('/auth/send-otp', { method: 'POST', body: normalizeOtpPayload(payload) }),
 
         verifyOTP: (payload, code) => 
+            request('/auth/verify-otp', { method: 'POST', body: normalizeOtpPayload(payload, code) }),
+        verifyOtp: (payload, code) => 
             request('/auth/verify-otp', { method: 'POST', body: normalizeOtpPayload(payload, code) }),
 
         signup: (signupData) => 
