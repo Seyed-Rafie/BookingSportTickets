@@ -58,12 +58,23 @@ async def search_tickets(
     ]
 
     # ۴. جستجوی متنی (Fuzzy Search روی عنوان، تیم‌ها و ورزشگاه)
+    # ۴. جستجوی متنی (پشتیبانی از نام ورزش، تیم‌ها، استادیوم و...)
     if q:
         must_conditions.append({
             "multi_match": {
                 "query": q,
-                "fields": ["title^3", "home_team^2", "away_team^2", "venue_name"],
-                "fuzziness": "AUTO"
+                "fields": [
+                    "title^3",            # عنوان مسابقه
+                    "home_team^2",         # تیم میزبان
+                    "away_team^2",         # تیم میهمان
+                    "sport_type^2",        # نام ورزش (فوتبال، بسکتبال و...)
+                    "venue_name",          # نام ورزشگاه
+                    "competition_name",    # نام لیگ/رقابت
+                    "city"                 # نام شهر
+                ],
+                "type": "best_fields",     # حالت استاندارد و سازگار با fuzziness
+                "fuzziness": "AUTO",       # خطاپوشی املایی
+                "operator": "or"           # انعطاف‌پذیری در یافتن کلمات
             }
         })
 
