@@ -1,3 +1,4 @@
+import API from './api.js';
 document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     // عناصر صفحه
