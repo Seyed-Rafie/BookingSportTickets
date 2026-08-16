@@ -52,4 +52,4 @@ class SignupResponse(BaseModel):
     message: str
     access_token: str
     token_type: str = "bearer"
-    user: UserData
+    user: UserData  
