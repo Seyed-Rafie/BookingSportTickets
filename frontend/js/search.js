@@ -53,11 +53,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        
+        // دریافت مقادیر تمام فیلدها از جمله قیمت و تاریخ
         const filters = {
-            query: document.getElementById('query').value,
-            sport_type: document.getElementById('sport-type').value,
-            city: document.getElementById('city').value
+            q: document.getElementById('query').value,
+            sport_type_id: document.getElementById('sport-type').value,
+            city_id: document.getElementById('city').value,
+            min_price: document.getElementById('min-price').value,
+            max_price: document.getElementById('max-price').value,
+            date_from: document.getElementById('date-from').value,
+            date_to: document.getElementById('date-to').value
         };
+        
         loadTickets(filters);
     });
 
@@ -71,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // استفاده از API.tickets.getDetails که شما نوشتید
             const ticketDetail = await API.tickets.getDetails(ticketId);
             
-            modalTitle.innerText = `${ticketDetail.home_team} - ${ticketDetail.away_team}`;
+            modalTitle.innerText = `${ticketDetail.match.home_team.name} - ${ticketDetail.match.away_team.name}`;
             modalBody.innerHTML = `
                 <p><strong>ورزش:</strong> ${ticketDetail.sport_type}</p>
                 <p><strong>ورزشگاه:</strong> ${ticketDetail.venue_name}</p>

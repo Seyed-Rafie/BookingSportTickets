@@ -84,12 +84,11 @@ const API = {
         login: (credentials) => 
             request('/auth/login', { method: 'POST', body: credentials }),
 
-        // تغییر مسیرها دقیقاً مطابق با Swagger
         getProfile: () => 
-            request('/users/me', { method: 'GET' }), // تغییر یافت
+            request('/users/me', { method: 'GET' }),
 
         updateProfile: (profileData) => 
-            request('/users/me', { method: 'PATCH', body: profileData }), // تغییر یافت به PATCH و /users/me
+            request('/users/me', { method: 'PATCH', body: profileData }),
     },
 
     // -------------------------------------------------------------
@@ -105,7 +104,7 @@ const API = {
             });
 
             const queryString = new URLSearchParams(cleanParams).toString();
-            const endpoint = queryString ? `/tickets/search?${queryString}` : '/tickets/search';
+            const endpoint = queryString ? `/tickets/?${queryString}` : '/tickets/';
             return request(endpoint, { method: 'GET' });
         },
 
@@ -114,7 +113,7 @@ const API = {
 
         getVenues: () => 
             request('/venues', { method: 'GET' }),
-    },
+    }, // <-- بخش تکراری و خراب اینجا حذف شد
 
     // -------------------------------------------------------------
     // ۳. رزرو، پرداخت و کنسلی
@@ -145,4 +144,6 @@ const API = {
     }
 };
 
-export default API;
+// هر دو روش Export را نگه می‌داریم تا هم فایل‌های شما کار کند و هم فایل‌های هم‌تیمی‌تان
+// export default API;
+window.API = API;

@@ -6,7 +6,6 @@
     <title>سامانه جامع رزرو بلیط مسابقات ورزشی</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* استایل‌های اختصاصی صفحه اصلی (می‌تواند به style.css هم منتقل شود) */
         .hero { background: var(--primary-color); color: white; padding: 3rem 1rem; text-align: center; margin-bottom: 2rem; }
         .hero h1 { font-size: 2rem; margin-bottom: 1rem; }
         .search-box { background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: -2rem; display: flex; flex-wrap: wrap; gap: 1rem; }
@@ -48,19 +47,38 @@
             <div class="form-group">
                 <select id="sport-type" class="form-control">
                     <option value="">همه ورزش‌ها</option>
-                    <option value="فوتبال">فوتبال</option>
-                    <option value="والیبال">والیبال</option>
-                    <option value="بسکتبال">بسکتبال</option>
+                    <option value="1">فوتبال</option>
+                    <option value="2">والیبال</option>
+                    <option value="3">بسکتبال</option>
                 </select>
             </div>
             <div class="form-group">
                 <select id="city" class="form-control">
                     <option value="">همه شهرها</option>
-                    <option value="تهران">تهران</option>
-                    <option value="اصفهان">اصفهان</option>
-                    <option value="تبریز">تبریز</option>
+                    <option value="1">تهران</option>
+                    <option value="2">اصفهان</option>
+                    <option value="3">تبریز</option>
                 </select>
             </div>
+
+            <!-- فیلدهای جدید: بازه قیمت -->
+            <div class="form-group">
+                <input type="number" id="min-price" class="form-control" placeholder="حداقل قیمت (تومان)">
+            </div>
+            <div class="form-group">
+                <input type="number" id="max-price" class="form-control" placeholder="حداکثر قیمت (تومان)">
+            </div>
+
+            <!-- فیلدهای جدید: بازه تاریخ -->
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <label for="date-from" style="font-size: 0.8rem; color: #666; white-space: nowrap;">از تاریخ:</label>
+                <input type="date" id="date-from" class="form-control" style="border: none; padding: 0; outline: none; background: transparent;">
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <label for="date-to" style="font-size: 0.8rem; color: #666; white-space: nowrap;">تا تاریخ:</label>
+                <input type="date" id="date-to" class="form-control" style="border: none; padding: 0; outline: none; background: transparent;">
+            </div>
+
             <div class="form-group">
                 <button type="submit" class="btn btn-primary" style="width: 100%; height: 100%;">جستجو</button>
             </div>
@@ -86,7 +104,7 @@
         </div>
     </div>
 
-    <!-- اسکریپت اصلی صفحه -->
-    <script type="module" src="js/search.js"></script>
+    <!-- اسکریپت اصلی صفحه (ورژن 4 برای دور زدن کش مرورگر) -->
+    <script type="module" src="js/search.js?v=4"></script>
 </body>
 </html>

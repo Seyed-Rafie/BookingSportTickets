@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود / ثبت‌نام - سامانه بلیط‌فروشی</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body class="auth-page">
+
+    <div class="auth-card">
+        <h2>ورود یا ثبت‌نام</h2>
+        
+        <!-- مرحله ۱: دریافت شماره موبایل -->
+        <form id="form-send-otp" class="auth-form">
+    <div class="form-group">
+        <label for="identifier">شماره موبایل یا ایمیل:</label>
+
+        <input
+            type="text"
+            name="identifier"
+            id="identifier"
+            placeholder="09123456789 یا example@gmail.com"
+            autocomplete="email"
+            required
+            dir="ltr"
+        >
+    </div>
+
+    <button type="submit" id="btn-send-otp">
+        ارسال کد تایید
+    </button>
+</form>
+
+        <!-- مرحله ۲: ورود کد OTP (پنهان در ابتدا) -->
+        <form id="form-verify-otp" class="auth-form hidden">
+            <p class="info-text">کد تایید به شماره <strong id="display-mobile"></strong> ارسال شد.</p>
+            <div class="form-group">
+                <label for="otp-code">کد تایید را وارد کنید:</label>
+                <input type="text" name="otp-code" id="otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required dir="ltr">
+            </div>
+            <button type="submit" id="btn-verify-otp">تایید و ورود</button>
+            <button type="button" id="btn-back" class="btn-link">تغییر شماره</button>
+        </form>
+
+        <div id="message-box" class="message-box hidden" aria-live="polite"></div>
+    </div>
+
+    <!-- کتابخانه‌های جاوااسکریپت -->
+    <script type="module" src="js/auth.js?v=2"></script>
+</body>
+</html>
