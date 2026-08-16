@@ -196,7 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ثبت گزارش مشکل
+    // ----------------------------------------------------
+    // ثبت گزارش مشکل (کد اصلاح شده)
+    // ----------------------------------------------------
     reportForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = reportForm.querySelector('button[type="submit"]');
@@ -205,7 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const reportData = {
             reservation_id: parseInt(selectedReservationId),
-            category: document.getElementById('report-category').value,
+            // نام کلید به report_category_id تغییر یافت و مقدار آن با parseInt به عدد تبدیل شد
+            report_category_id: parseInt(document.getElementById('report-category').value),
             description: document.getElementById('report-description').value
         };
 
